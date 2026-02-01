@@ -86,8 +86,8 @@ function MessageItem({ message }: { message: ChatMessage }) {
                                     <AreaChart data={message.chartData.data}>
                                         <defs>
                                             <linearGradient id={`gradient-${message.id}`} x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor={message.chartData.config.color || "#06b6d4"} stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor={message.chartData.config.color || "#06b6d4"} stopOpacity={0} />
+                                                <stop offset="5%" stopColor={message.chartData.config.color+"" || "#06b6d4"} stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor={message.chartData.config.color+"" || "#06b6d4"} stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -118,7 +118,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
                                         <Area
                                             type="monotone"
                                             dataKey="value"
-                                            stroke={message.chartData.config.color || "#06b6d4"}
+                                            stroke={message.chartData.config.color+"" || "#06b6d4"}
                                             fill={`url(#gradient-${message.id})`}
                                             strokeWidth={2}
                                         />
