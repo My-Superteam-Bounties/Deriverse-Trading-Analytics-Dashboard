@@ -7,6 +7,7 @@ import { FloatingSidebar } from "./FloatingSidebar";
 import { MobileNav } from "./MobileNav";
 import { Bell, Search, Wallet, Command, Sparkles, ArrowRight, CheckCircle, AlertTriangle, Info } from "lucide-react";
 import { WalletButton } from "@/components/wallet/WalletButton";
+import { DisclaimerDialog } from "./DisclaimerDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -161,6 +162,8 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                 <main className="flex-1 animate-fade-in-up">
                     {children}
                 </main>
+
+                <DisclaimerDialog />
             </div>
         </div>
     );
