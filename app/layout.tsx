@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
+import { GoogleTagManager } from '@next/third-parties/google'
+
 const geist_mono = Geist_Mono({
   subsets: ["latin"],
   weight: ["200", "300", "400", "600", "700", "900"],
@@ -27,6 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <GoogleTagManager gtmId="GTM-NFKFC7XD" />
       <body className={`${geist.variable} ${geist_mono.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
