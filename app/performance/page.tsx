@@ -13,10 +13,10 @@ export default function PerformancePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 h-[400px] rounded-2xl bg-[#09090b] border border-white/5 backdrop-blur-sm">
+                <div className="lg:col-span-2 min-h-[400px] rounded-2xl bg-[#09090b] border border-white/5 backdrop-blur-sm">
                     <PnLChart />
                 </div>
-                <div className="h-[400px] rounded-2xl bg-[#09090b] border border-white/5 backdrop-blur-sm p-6">
+                <div className="h-fit rounded-2xl bg-[#09090b] border border-white/5 backdrop-blur-sm p-6">
                     <PerformanceWidget />
                 </div>
             </div>

@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FloatingSidebar } from "./FloatingSidebar";
 import { MobileNav } from "./MobileNav";
 import { Bell, Search, Wallet, Command, Sparkles, ArrowRight, CheckCircle, AlertTriangle, Info } from "lucide-react";
-import { WalletButton } from "@/components/wallet/WalletButton";
+import { CustomWalletModal } from "@/components/wallet/CustomWalletModal";
 import { DisclaimerDialog } from "./DisclaimerDialog";
+import { DashboardCompanion } from "./DashboardCompanion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -18,8 +19,21 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLayoutProps) {
-    // Default to collapsed as requested
+    // Default to collapsed as requested, but try to restore from localStorage
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+    useEffect(() => {
+        const savedState = localStorage.getItem("deriverse_sidebar_collapsed");
+        if (savedState !== null) {
+            setIsSidebarCollapsed(savedState === "true");
+        }
+    }, []);
+
+    const toggleSidebar = () => {
+        const newState = !isSidebarCollapsed;
+        setIsSidebarCollapsed(newState);
+        localStorage.setItem("deriverse_sidebar_collapsed", String(newState));
+    };
 
     return (
         <div className="min-h-screen bg-background text-foreground font-sans selection:bg-amber-500/30 selection:text-amber-200 relative overflow-hidden">
@@ -36,12 +50,12 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
             {/* Floating Sidebar (Responsive: Slides in on mobile) */}
             <FloatingSidebar
                 isCollapsed={isSidebarCollapsed}
-                toggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                toggleCollapse={toggleSidebar}
             />
 
             {/* Mobile Navigation (Desktop: Hidden | Mobile: Visible) */}
             <MobileNav
-                onMenuClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                onMenuClick={toggleSidebar}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
             />
@@ -154,7 +168,8 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                             </PopoverContent>
                         </Popover>
 
-                        <WalletButton />
+                        {/* Wallet Button */}
+                        <CustomWalletModal />
                     </div>
                 </header>
 
@@ -164,6 +179,7 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                 </main>
 
                 <DisclaimerDialog />
+                <DashboardCompanion />
             </div>
         </div>
     );

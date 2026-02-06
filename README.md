@@ -75,6 +75,40 @@ A professional, high-performance trading analytics dashboard for the Solana ecos
 
 ---
 
+## 🔗 Deriverse SDK Integration
+
+This dashboard integrates with the **Deriverse DEX** via the `@deriverse/kit` SDK, enabling real on-chain trading operations.
+
+### Architecture
+
+- **Client Wrapper** (`lib/deriverse/client.ts`): Encapsulates the Deriverse `Engine` with browser-friendly methods
+- **React Hook** (`hooks/useDeriverse.ts`): Manages SDK lifecycle and wallet integration
+- **UI Components** (`components/deriverse/`): Status displays and trading interfaces
+
+### Usage Example
+
+```typescript
+import { useDeriverse } from '@/hooks/useDeriverse';
+
+function TradingComponent() {
+  const { client, isInitialized } = useDeriverse();
+  
+  if (!isInitialized) return <div>Connecting to Deriverse...</div>;
+  
+  // Use client methods for trading operations
+  const tokenId = await client.getTokenId(mintAddress);
+  // ... place orders, deposits, etc.
+}
+```
+
+The SDK automatically initializes when a wallet is connected and provides methods for:
+- Token and instrument lookups
+- Deposit/withdrawal operations  
+- Spot order placement and cancellation
+- Client data and order book queries
+
+---
+
 ## 🔑 Environment Variables
 
 Currently, the application runs in a **Demonstration Mode** using mock data generators (`lib/mock-data.ts`) and does not require external API keys for the core UI.

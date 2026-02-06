@@ -1,31 +1,45 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { MOCK_TRADES, Trade } from "@/lib/mock-data";
+import { useDeriverseData } from "@/hooks/useDeriverseData";
 import { format } from "date-fns";
 import {
-    ArrowUpDown,
     ChevronLeft,
     ChevronRight,
     Download,
     Filter,
-    Search
+    Search,
+    Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// ... imports
+import { TradingJournal } from "./TradingJournal";
+import { BookOpen } from "lucide-react";
+import { TradeHistory } from "@/lib/deriverse/client";
+
 export function TradeHistoryTable() {
+    const { data, isLoading } = useDeriverseData();
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState<string>("ALL");
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedTrade, setSelectedTrade] = useState<TradeHistory | null>(null);
+    const [isJournalOpen, setIsJournalOpen] = useState(false);
     const itemsPerPage = 15;
 
+    // ... (Memo logic stays same)
     const filteredTrades = useMemo(() => {
-        return MOCK_TRADES.filter((trade) => {
+        if (!data || !data.trades.length) return [];
+
+        return data.trades.filter((trade) => {
             const matchesSearch = trade.symbol.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesType = typeFilter === "ALL" || trade.type === typeFilter;
+            const matchesType = typeFilter === "ALL" ||
+                (typeFilter === "SPOT" && !trade.symbol.includes("PERP") && !trade.symbol.includes("OPT")) ||
+                (typeFilter === "PERP" && trade.symbol.includes("PERP")) ||
+                (typeFilter === "OPTION" && trade.symbol.includes("OPT"));
             return matchesSearch && matchesType;
         });
-    }, [searchTerm, typeFilter]);
+    }, [data, searchTerm, typeFilter]);
 
     const totalPages = Math.ceil(filteredTrades.length / itemsPerPage);
     const paginatedTrades = filteredTrades.slice(
@@ -33,22 +47,41 @@ export function TradeHistoryTable() {
         currentPage * itemsPerPage
     );
 
+    const handleRowClick = (trade: TradeHistory) => {
+        setSelectedTrade(trade);
+        setIsJournalOpen(true);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-4">
+            <TradingJournal
+                trade={selectedTrade}
+                open={isJournalOpen}
+                onOpenChange={setIsJournalOpen}
+            />
+
             {/* Filters Bar */}
             <div className="flex flex-col md:flex-row justify-between gap-4 bg-card p-4 rounded-xl border border-border">
+                {/* ... (Search Inputs - Keep Existing) ... */}
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Search symbol..."
-                            className="h-10 w-full pl-9 pr-4 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                            className="h-10 w-full pl-9 pr-4 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/50"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-
                     <div className="relative">
                         <select
                             className="h-10 pl-3 pr-8 rounded-lg bg-muted/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 appearance-none"
@@ -63,7 +96,6 @@ export function TradeHistoryTable() {
                         <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
                 </div>
-
                 <div className="flex items-center gap-2">
                     <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground bg-muted/50 border border-border rounded-lg hover:bg-muted transition-colors">
                         <Download className="h-4 w-4" />
@@ -78,91 +110,96 @@ export function TradeHistoryTable() {
                     <table className="w-full text-sm text-left">
                         <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
                             <tr>
-                                <th className="px-6 py-4 font-medium">Date</th>
-                                <th className="px-6 py-4 font-medium">Symbol</th>
-                                <th className="px-6 py-4 font-medium">Type</th>
-                                <th className="px-6 py-4 font-medium">Side</th>
-                                <th className="px-6 py-4 font-medium">Entry</th>
-                                <th className="px-6 py-4 font-medium">Exit</th>
-                                <th className="px-6 py-4 font-medium">Size</th>
-                                <th className="px-6 py-4 font-medium">Fee</th>
-                                <th className="px-6 py-4 font-medium text-right">PnL</th>
+                                <th className="px-4 py-3">Time</th>
+                                <th className="px-4 py-3">Symbol</th>
+                                <th className="px-4 py-3">Side</th>
+                                <th className="px-4 py-3 text-right">Price</th>
+                                <th className="px-4 py-3 text-right">Size</th>
+                                <th className="px-4 py-3 text-right">Fee</th>
+                                <th className="px-4 py-3 text-right">PnL</th>
+                                <th className="px-4 py-3 w-[50px]"></th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-border">
-                            {paginatedTrades.map((trade) => (
-                                <tr key={trade.id} className="hover:bg-cyan-500/5 transition-colors">
-                                    <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
-                                        {trade.closeTime ? format(trade.closeTime, "MMM dd, yyyy HH:mm") : "-"}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-foreground">
-                                        {trade.symbol}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={cn(
-                                            "px-2 py-1 rounded text-[10px] font-bold uppercase",
-                                            trade.type === "PERP" ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" :
-                                                trade.type === "OPTION" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
-                                                    "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                                        )}>
-                                            {trade.type}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={cn(
-                                            "font-medium",
-                                            trade.side === "LONG" ? "text-green-400" : "text-red-400"
-                                        )}>
-                                            {trade.side}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-muted-foreground">
-                                        ${trade.entryPrice.toLocaleString(undefined, { maximumFractionDigits: 5 })}
-                                    </td>
-                                    <td className="px-6 py-4 text-muted-foreground">
-                                        {trade.exitPrice ? `$${trade.exitPrice.toLocaleString(undefined, { maximumFractionDigits: 5 })}` : "-"}
-                                    </td>
-                                    <td className="px-6 py-4 text-muted-foreground">
-                                        ${trade.size.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                    </td>
-                                    <td className="px-6 py-4 text-muted-foreground">
-                                        ${trade.fee.toFixed(2)}
-                                    </td>
-                                    <td className="px-6 py-4 text-right font-medium">
-                                        <span className={cn(
-                                            trade.pnl >= 0 ? "text-green-400" : "text-red-400"
-                                        )}>
-                                            {trade.pnl >= 0 ? "+" : ""}${trade.pnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </span>
+                        <tbody>
+                            {paginatedTrades.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                                        No trades found
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                paginatedTrades.map((trade, i) => (
+                                    <tr
+                                        key={i}
+                                        onClick={() => handleRowClick(trade)}
+                                        className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer group"
+                                    >
+                                        <td className="px-4 py-3 text-muted-foreground">
+                                            {format(trade.timestamp, "MMM dd, HH:mm")}
+                                        </td>
+                                        <td className="px-4 py-3 font-medium">{trade.symbol}</td>
+                                        <td className="px-4 py-3">
+                                            <span className={cn(
+                                                "px-2 py-1 rounded text-xs font-medium",
+                                                trade.side === "BUY"
+                                                    ? "bg-green-500/10 text-green-400"
+                                                    : "bg-red-500/10 text-red-400"
+                                            )}>
+                                                {trade.side}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-mono">
+                                            ${trade.price.toFixed(2)}
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-mono">
+                                            {trade.size.toFixed(4)}
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-mono text-muted-foreground">
+                                            ${trade.fee.toFixed(2)}
+                                        </td>
+                                        <td className={cn(
+                                            "px-4 py-3 text-right font-mono font-medium",
+                                            (trade.pnl || 0) >= 0 ? "text-green-400" : "text-red-400"
+                                        )}>
+                                            {trade.pnl ? `$${trade.pnl.toFixed(2)}` : "-"}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <BookOpen className="w-4 h-4 text-zinc-600 group-hover:text-amber-500 transition-colors opacity-0 group-hover:opacity-100" />
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
 
                 {/* Pagination */}
-                <div className="flex items-center justify-between px-6 py-4 bg-muted/20 border-t border-border">
-                    <p className="text-sm text-muted-foreground">
-                        Showing <span className="font-medium text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium text-foreground">{Math.min(currentPage * itemsPerPage, filteredTrades.length)}</span> of <span className="font-medium text-foreground">{filteredTrades.length}</span> results
-                    </p>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="p-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="p-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-t border-border">
+                        <div className="text-sm text-muted-foreground">
+                            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredTrades.length)} of {filteredTrades.length} trades
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-lg bg-muted/50 border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <span className="text-sm font-medium">
+                                Page {currentPage} of {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-lg bg-muted/50 border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

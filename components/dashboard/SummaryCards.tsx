@@ -1,11 +1,22 @@
 "use client";
 
-import { useTradeMetrics } from "@/hooks/useTradeMetrics";
-import { DollarSign, BarChart3, Target, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TrendingUp, TrendingDown, Activity, DollarSign, BarChart3, Target } from "lucide-react";
+interface SummaryCardsProps {
+    data: {
+        totalPnL: number;
+        totalVolume: number;
+        totalTrades: number;
+        winRate: number;
+    } | null;
+}
 
-export function SummaryCards() {
-    const { totalPnL, totalVolume, tradeCount, winRate } = useTradeMetrics();
+export function SummaryCards({ data }: SummaryCardsProps) {
+    // Default values if no data
+    const totalPnL = data?.totalPnL || 0;
+    const totalVolume = data?.totalVolume || 0;
+    const tradeCount = data?.totalTrades || 0;
+    const winRate = data?.winRate || 0;
 
     const cards = [
         {
@@ -47,19 +58,19 @@ export function SummaryCards() {
                 >
                     <div className="flex justify-between items-start mb-4">
                         <div className={cn(
-                            "p-2 rounded-lg bg-opacity-10",
-                            card.status === "success" ? "bg-green-500 text-green-400" :
-                                card.status === "danger" ? "bg-red-500 text-red-400" :
-                                    card.status === "warning" ? "bg-yellow-500 text-yellow-400" :
-                                        "bg-blue-500 text-cyan-400"
+                            "p-2 rounded-lg",
+                            card.status === "success" ? "bg-emerald-500/10 text-emerald-400" :
+                                card.status === "danger" ? "bg-rose-500/10 text-rose-400" :
+                                    card.status === "warning" ? "bg-amber-500/10 text-amber-400" :
+                                        "bg-blue-500/10 text-blue-400"
                         )}>
                             <card.icon className="h-5 w-5" />
                         </div>
                         <span className={cn(
-                            "text-xs font-medium px-2 py-1 rounded-full bg-opacity-10",
-                            card.status === "success" ? "bg-green-500 text-green-400" :
-                                card.status === "danger" ? "bg-red-500 text-red-400" :
-                                    "bg-muted text-muted-foreground"
+                            "text-xs font-bold px-2 py-1 rounded-full",
+                            card.status === "success" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" :
+                                card.status === "danger" ? "bg-rose-500/20 text-rose-400 border border-rose-500/20" :
+                                    "bg-zinc-500/20 text-zinc-400 border border-zinc-500/20"
                         )}>
                             {card.trend}
                         </span>

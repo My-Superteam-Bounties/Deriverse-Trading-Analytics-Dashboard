@@ -11,9 +11,11 @@ import {
   PieChart,
   Grid,
   ChevronLeft,
-  LogOut,
+  Wallet,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWalletStore } from "@/lib/wallet-store";
 
 interface FloatingSidebarProps {
   isCollapsed: boolean;
@@ -22,6 +24,7 @@ interface FloatingSidebarProps {
 
 export function FloatingSidebar({ isCollapsed, toggleCollapse }: FloatingSidebarProps) {
   const pathname = usePathname();
+  const { isConnected, address, walletType } = useWalletStore();
 
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, href: "/" },
@@ -81,43 +84,65 @@ export function FloatingSidebar({ isCollapsed, toggleCollapse }: FloatingSidebar
           </button>
         </div>
 
+        {/* Wallet Connection Status */}
+        {!isConnected && (
+          <div className="mx-3 mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs font-medium text-amber-500">Wallet Required</p>
+                <p className="text-xs text-amber-500/70 mt-0.5">Connect your wallet to access trading data</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto scrollbar-hide">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const isDisabled = !isConnected;
+
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={isDisabled ? "#" : item.href}
+                onClick={(e) => isDisabled && e.preventDefault()}
                 className={cn(
                   "flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden",
-                  isActive
+                  isDisabled && "opacity-40 cursor-not-allowed",
+                  !isDisabled && isActive
                     ? "bg-gradient-to-r from-amber-500/20 to-purple-500/10 text-amber-400 shadow-inner border border-white/5"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                    : !isDisabled && "text-slate-400 hover:text-white hover:bg-white/5"
                 )}
               >
-                {isActive && <div className="absolute inset-0 bg-amber-400/5 z-0"></div>}
-                <item.icon className={cn("h-5 w-5 transition-colors shrink-0 z-10", isActive ? "text-amber-400" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground")} />
+                {isActive && !isDisabled && <div className="absolute inset-0 bg-amber-400/5 z-0"></div>}
+                <item.icon className={cn("h-5 w-5 transition-colors shrink-0 z-10", isActive && !isDisabled ? "text-amber-400" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground")} />
 
-                <span className={cn("ml-3 truncate animate-fade-in z-10", isActive && "font-bold")}>{item.label}</span>
+                <span className={cn("ml-3 truncate animate-fade-in z-10", isActive && !isDisabled && "font-bold")}>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Footer / Profile */}
+        {/* Footer / Wallet Info */}
         <div className="p-4 border-t border-white/5 shrink-0">
-          <div className="flex items-center gap-3 p-2 rounded-xl transition-colors cursor-pointer hover:bg-white/5">
-            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-lg relative">
-              JD
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-[#09090b]"></span>
+          {isConnected ? (
+            <div className="flex items-center gap-3 p-2 rounded-xl bg-white/5">
+              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-lg relative">
+                <Wallet className="h-4 w-4" />
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-[#09090b]"></span>
+              </div>
+              <div className="flex-1 overflow-hidden animate-fade-in">
+                <p className="text-xs font-medium text-sidebar-foreground/60 truncate">{walletType || "Wallet"}</p>
+                <p className="text-xs text-sidebar-foreground truncate font-mono">{address ? `${address.slice(0, 4)}...${address.slice(-4)}` : "Connected"}</p>
+              </div>
             </div>
-            <div className="flex-1 overflow-hidden animate-fade-in">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">James Doe</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">Pro Plan</p>
+          ) : (
+            <div className="text-center text-xs text-muted-foreground">
+              Connect wallet to continue
             </div>
-            <LogOut className="h-4 w-4 text-sidebar-foreground/60 hover:text-destructive transition-colors" />
-          </div>
+          )}
         </div>
       </aside>
     </>

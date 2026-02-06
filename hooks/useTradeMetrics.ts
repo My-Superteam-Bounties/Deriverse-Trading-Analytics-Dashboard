@@ -1,44 +1,29 @@
 import { useMemo } from "react";
-import { MOCK_TRADES } from "@/lib/mock-data";
+import { useDeriverseData } from "./useDeriverseData";
 
 export function useTradeMetrics() {
-    const trades = MOCK_TRADES;
+    const { data, isLoading } = useDeriverseData();
 
     const metrics = useMemo(() => {
-        let totalPnL = 0;
-        let totalVolume = 0;
-        let wins = 0;
-        let losses = 0;
-        let totalDuration = 0;
-
-        trades.forEach((t) => {
-            totalPnL += t.pnl;
-            totalVolume += t.size;
-
-            if (t.pnl > 0) wins++;
-            else losses++;
-
-            // Duration (approx if closeTime exists)
-            if (t.closeTime) {
-                totalDuration += t.closeTime.getTime() - t.openTime.getTime();
-            }
-        });
-
-        const tradeCount = trades.length;
-        const winRate = tradeCount > 0 ? (wins / tradeCount) * 100 : 0;
-        const avgDurationMs = tradeCount > 0 ? totalDuration / tradeCount : 0;
-        const avgDurationHrs = avgDurationMs / (1000 * 60 * 60);
+        if (!data) {
+            return {
+                totalPnL: 0,
+                totalVolume: 0,
+                tradeCount: 0,
+                winRate: 0,
+            };
+        }
 
         return {
-            totalPnL,
-            totalVolume,
-            tradeCount,
-            winRate,
-            wins,
-            losses,
-            avgDurationHrs
+            totalPnL: data.totalPnL,
+            totalVolume: data.totalVolume,
+            tradeCount: data.totalTrades,
+            winRate: data.winRate,
         };
-    }, [trades]);
+    }, [data]);
 
-    return metrics;
+    return {
+        ...metrics,
+        isLoading,
+    };
 }
