@@ -21,10 +21,10 @@ export function WalletGuard({ children }: WalletGuardProps) {
     if (!isConnected) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <Card className="max-w-md w-full p-8 card-gradient text-center">
+                <Card className="max-w-md w-full p-8 card-gradient text-center border-primary/20">
                     <div className="flex justify-center mb-6">
-                        <div className="p-4 rounded-full bg-amber-500/10">
-                            <Wallet className="h-12 w-12 text-amber-500" />
+                        <div className="p-4 rounded-full bg-primary/10">
+                            <Wallet className="h-12 w-12 text-primary" />
                         </div>
                     </div>
                     <h2 className="text-2xl font-bold mb-3">Connect Your Wallet</h2>
@@ -33,15 +33,15 @@ export function WalletGuard({ children }: WalletGuardProps) {
                     </p>
                     <div className="flex flex-col gap-3 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-amber-500" />
+                            <TrendingUp className="h-4 w-4 text-primary" />
                             <span>Real-time PnL tracking</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-amber-500" />
+                            <TrendingUp className="h-4 w-4 text-primary" />
                             <span>Position monitoring</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-amber-500" />
+                            <TrendingUp className="h-4 w-4 text-primary" />
                             <span>Trade history analysis</span>
                         </div>
                     </div>
@@ -54,9 +54,9 @@ export function WalletGuard({ children }: WalletGuardProps) {
     if (isInitializing) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <Card className="max-w-md w-full p-8 card-gradient text-center">
+                <Card className="max-w-md w-full p-8 card-gradient text-center border-primary/20">
                     <div className="flex justify-center mb-6">
-                        <Loader2 className="h-12 w-12 text-amber-500 animate-spin" />
+                        <Loader2 className="h-12 w-12 text-primary animate-spin" />
                     </div>
                     <h2 className="text-2xl font-bold mb-3">Connecting to Deriverse</h2>
                     <p className="text-muted-foreground">
@@ -71,17 +71,17 @@ export function WalletGuard({ children }: WalletGuardProps) {
     if (error) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <Card className="max-w-md w-full p-8 card-gradient text-center">
+                <Card className="max-w-md w-full p-8 card-gradient text-center border-destructive/20">
                     <div className="flex justify-center mb-6">
-                        <div className="p-4 rounded-full bg-red-500/10">
-                            <AlertCircle className="h-12 w-12 text-red-500" />
+                        <div className="p-4 rounded-full bg-destructive/10">
+                            <AlertCircle className="h-12 w-12 text-destructive" />
                         </div>
                     </div>
                     <h2 className="text-2xl font-bold mb-3">Connection Error</h2>
                     <p className="text-muted-foreground mb-6">{error instanceof Error ? error.message : String(error)}</p>
                     <Button
                         onClick={() => initialize()}
-                        className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                         Retry Connection
                     </Button>

@@ -19,14 +19,14 @@ interface WalletOption {
 const SUPPORTED_WALLETS: WalletOption[] = [
     {
         name: "Phantom",
-        icon: "https://phantom.app/img/phantom-logo.svg",
+        icon: "/phantom.png",
         adapter: "Phantom" as WalletName,
         installUrl: "https://phantom.app/download",
         checkInstalled: () => typeof window !== "undefined" && "phantom" in window && window.phantom?.solana?.isPhantom === true,
     },
     {
         name: "Solflare",
-        icon: "https://solflare.com/favicon.ico",
+        icon: "/solflare.png",
         adapter: "Solflare" as WalletName,
         installUrl: "https://solflare.com/download",
         checkInstalled: () => typeof window !== "undefined" && "solflare" in window,
@@ -132,7 +132,7 @@ export function CustomWalletModal({ className, children }: CustomWalletModalProp
             <button
                 onClick={handleDisconnect}
                 className={cn(
-                    "flex items-center gap-2 px-4 h-10 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-lg text-sm font-medium transition-all shadow-lg",
+                    "flex items-center gap-2 px-4 h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-all shadow-lg shadow-primary/20",
                     className
                 )}
             >
@@ -150,7 +150,7 @@ export function CustomWalletModal({ className, children }: CustomWalletModalProp
             <button
                 onClick={() => { setOpen(true); setConnectionError(null); }}
                 className={cn(
-                    "flex items-center gap-2 px-4 h-10 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-lg text-sm font-medium transition-all shadow-lg",
+                    "flex items-center gap-2 px-4 h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-all shadow-lg shadow-primary/20",
                     className
                 )}
             >
@@ -163,9 +163,9 @@ export function CustomWalletModal({ className, children }: CustomWalletModalProp
             </button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="sm:max-w-md bg-gradient-to-b from-zinc-950 to-zinc-900 border-amber-500/20">
+                <DialogContent className="sm:max-w-md bg-card border-primary/20">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+                        <DialogTitle className="text-2xl font-bold text-primary">
                             Connect Wallet
                         </DialogTitle>
                         <div className="sr-only"> {/* Screen reader only description */}
@@ -175,7 +175,7 @@ export function CustomWalletModal({ className, children }: CustomWalletModalProp
 
                     {connectionError && (
                         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                            <p className="text-sm text-red-400 flex items-start gap-2">
+                            <p className="text-sm text-red-500 flex items-start gap-2">
                                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                                 <span>{connectionError}</span>
                             </p>
@@ -195,15 +195,28 @@ export function CustomWalletModal({ className, children }: CustomWalletModalProp
                                             disabled={isConnecting}
                                             className={cn(
                                                 "w-full flex items-center gap-4 p-4 rounded-xl border transition-all",
-                                                "bg-white/5 border-white/10 hover:bg-amber-500/10 hover:border-amber-500/30",
+                                                "bg-muted/50 border-border hover:bg-primary/10 hover:border-primary/30",
                                                 "disabled:opacity-50 disabled:cursor-not-allowed"
                                             )}
                                         >
-                                            <img src={walletOption.icon} alt={walletOption.name} className="w-10 h-10 rounded-lg" />
+                                            <img
+                                                src={walletOption.icon}
+                                                alt={walletOption.name}
+                                                className="w-10 h-10 rounded-lg"
+                                                onError={(e) => {
+                                                    // Fallback to a generic wallet icon if image fails to load
+                                                    e.currentTarget.style.display = 'none';
+                                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                                    if (fallback) fallback.style.display = 'flex';
+                                                }}
+                                            />
+                                            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold text-lg hidden shadow-lg">
+                                                {walletOption.name[0]}
+                                            </div>
                                             <div className="flex-1 text-left">
-                                                <p className="font-medium text-white">{walletOption.name}</p>
+                                                <p className="font-medium text-foreground">{walletOption.name}</p>
                                                 {isConnecting && (
-                                                    <p className="text-xs text-green-400 flex items-center gap-1 animate-pulse">
+                                                    <p className="text-xs text-primary flex items-center gap-1 animate-pulse">
                                                         <Loader2 className="h-3 w-3 animate-spin" />
                                                         Requesting connection...
                                                     </p>
@@ -215,14 +228,26 @@ export function CustomWalletModal({ className, children }: CustomWalletModalProp
                                             href={walletOption.installUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="w-full flex items-center gap-4 p-4 rounded-xl border transition-all bg-white/5 border-white/10 opacity-60 hover:opacity-100"
+                                            className="w-full flex items-center gap-4 p-4 rounded-xl border transition-all bg-muted/30 border-border opacity-60 hover:opacity-100"
                                         >
-                                            <img src={walletOption.icon} alt={walletOption.name} className="w-10 h-10 rounded-lg grayscale" />
-                                            <div className="flex-1 text-left">
-                                                <p className="font-medium text-white/70">{walletOption.name}</p>
-                                                <p className="text-xs text-amber-400">Install Wallet</p>
+                                            <img
+                                                src={walletOption.icon}
+                                                alt={walletOption.name}
+                                                className="w-10 h-10 rounded-lg grayscale"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                                    if (fallback) fallback.style.display = 'flex';
+                                                }}
+                                            />
+                                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground font-bold text-lg hidden grayscale">
+                                                {walletOption.name[0]}
                                             </div>
-                                            <ExternalLink className="h-4 w-4 text-white/50" />
+                                            <div className="flex-1 text-left">
+                                                <p className="font-medium text-muted-foreground">{walletOption.name}</p>
+                                                <p className="text-xs text-primary">Install Wallet</p>
+                                            </div>
+                                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
                                         </a>
                                     )}
                                 </div>

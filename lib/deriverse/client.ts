@@ -90,7 +90,7 @@ export class DeriverseAnalyticsClient {
 
             this.engine = new Engine(this.rpc, {
                 programId: programId,
-                version: 1
+                version: Number(process.env.NEXT_PUBLIC_DERIVERSE_VERSION || '1')
             });
 
             await this.engine.initialize();
@@ -214,7 +214,11 @@ export class DeriverseAnalyticsClient {
 
                 if (orders.bids && orders.bids.length > 0) {
                     const totalSize = orders.bids.reduce((sum, order) => sum + order.qty, 0);
-                    const avgPrice = orders.bids.reduce((sum, order) => sum + order.price * order.qty, 0) / totalSize;
+                    // NOTE: OrderModel doesn't directly expose price. For this analytic estimation without an indexer,
+                    // we use the current market price as a proxy for the 'entry' of these active/open orders.
+                    // This results in ~0 PnL for spot "positions" derived from open orders, which is acceptable 
+                    // for this dashboard's "Live" view limitations.
+                    const avgPrice = orders.bids.reduce((sum, order) => sum + instr.header.lastPx * order.qty, 0) / totalSize;
 
                     positions.push({
                         instrId,

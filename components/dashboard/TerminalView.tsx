@@ -80,7 +80,7 @@ export function TerminalView() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-9 w-9 text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10"
+                                    className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10"
                                     onClick={() => setShowJournal(true)}
                                     title="Add Journal Entry"
                                 >
@@ -89,7 +89,7 @@ export function TerminalView() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-9 w-9 text-muted-foreground hover:text-cyan-400 hover:bg-cyan-500/10"
+                                    className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10"
                                     onClick={() => setShowOverview(true)}
                                     title="Friendly Overview"
                                 >

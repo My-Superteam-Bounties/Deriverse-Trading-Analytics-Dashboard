@@ -90,7 +90,7 @@ export function IntelligenceView({ onSwitchToTerminal }: IntelligenceViewProps) 
                 {/* 1. Hero Content (Only visible when no chat) */}
                 {!isChatActive && (
                     <div className="text-center space-y-6 max-w-4xl mx-auto animate-fade-in-up">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted/20 border border-border text-[10px] font-semibold uppercase tracking-wider text-amber-500 animate-fade-in backdrop-blur-md">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-semibold uppercase tracking-wider text-primary animate-fade-in backdrop-blur-md">
                             <Sparkles className="h-3 w-3" />
                             <span>Deriverse Intelligence</span>
                         </div>
@@ -106,7 +106,7 @@ export function IntelligenceView({ onSwitchToTerminal }: IntelligenceViewProps) 
 
                         {/* Initial Input Interface */}
                         <div className="w-full max-w-2xl relative group mx-auto mt-12">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 to-purple-600/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity blur-lg duration-500"></div>
+                            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity blur-lg duration-500"></div>
                             <div className="relative bg-card border border-border rounded-2xl p-2 flex items-center shadow-2xl focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                                 <div className="h-10 w-10 rounded-xl flex items-center justify-center text-muted-foreground shrink-0">
                                     <Search className="h-5 w-5" />
@@ -122,7 +122,7 @@ export function IntelligenceView({ onSwitchToTerminal }: IntelligenceViewProps) 
                                 />
                                 <button
                                     onClick={() => input.trim() && submitQuery(input)}
-                                    className="h-10 px-6 rounded-xl bg-foreground text-background font-semibold flex items-center justify-center hover:opacity-90 transition-all gap-2 shrink-0 transform active:scale-95"
+                                    className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center hover:opacity-90 transition-all gap-2 shrink-0 transform active:scale-95"
                                 >
                                     <span>Go</span>
                                     <ArrowRight className="h-4 w-4" />
@@ -147,7 +147,7 @@ export function IntelligenceView({ onSwitchToTerminal }: IntelligenceViewProps) 
                                         onClick={() => submitQuery(suggestion.label)}
                                         className="px-3 py-1.5 rounded-lg border border-border bg-card/50 hover:bg-muted text-xs text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors backdrop-blur-lg cursor-pointer"
                                     >
-                                        <suggestion.icon className="h-3 w-3 text-amber-500" />
+                                        <suggestion.icon className="h-3 w-3 text-primary" />
                                         {suggestion.label}
                                     </button>
                                 ))}
@@ -171,7 +171,7 @@ export function IntelligenceView({ onSwitchToTerminal }: IntelligenceViewProps) 
                                 }
                             ].map((item, i) => (
                                 <div key={i} className="bg-card/30 p-8 rounded-3xl border border-border/50 flex flex-col gap-6 hover:translate-y-[-4px] transition-transform duration-300 group backdrop-blur-sm">
-                                    <div className="h-0.5 w-10 bg-gradient-to-r from-amber-500 to-transparent"></div>
+                                    <div className="h-0.5 w-10 bg-gradient-to-r from-primary to-transparent"></div>
                                     <div>
                                         <h3 className="text-xl font-bold text-foreground mb-2">{item.title}</h3>
                                         <p className="text-muted-foreground leading-relaxed font-light text-sm">{item.desc}</p>

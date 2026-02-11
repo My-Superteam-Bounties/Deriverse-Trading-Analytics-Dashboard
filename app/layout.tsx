@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { WalletProvider } from "@/providers/WalletProvider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 import { GoogleTagManager } from '@next/third-parties/google'
@@ -34,13 +35,15 @@ export default function RootLayout({
       <body className={`${geist.variable} ${geist_mono.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
+          themes={["light", "dark", "deriverse"]}
         >
           <WalletProvider>
             {children}
           </WalletProvider>
+          <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>
     </html>

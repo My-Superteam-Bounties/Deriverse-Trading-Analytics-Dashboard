@@ -44,7 +44,7 @@ export function DeriverseStatus() {
                 {error && (
                     <div className="flex items-center gap-3 text-red-500">
                         <AlertCircle className="h-4 w-4" />
-                        <p className="text-sm">{error}</p>
+                        <p className="text-sm">{error.message}</p>
                     </div>
                 )}
 

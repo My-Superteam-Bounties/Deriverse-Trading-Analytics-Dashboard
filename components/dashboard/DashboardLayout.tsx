@@ -7,6 +7,7 @@ import { FloatingSidebar } from "./FloatingSidebar";
 import { MobileNav } from "./MobileNav";
 import { Bell, Search, Wallet, Command, Sparkles, ArrowRight, CheckCircle, AlertTriangle, Info } from "lucide-react";
 import { CustomWalletModal } from "@/components/wallet/CustomWalletModal";
+import { WalletProfilePopover } from "@/components/wallet/WalletProfilePopover";
 import { DisclaimerDialog } from "./DisclaimerDialog";
 import { DashboardCompanion } from "./DashboardCompanion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -36,15 +37,15 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
     };
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-amber-500/30 selection:text-amber-200 relative overflow-hidden">
+        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary relative overflow-hidden">
 
             {/* Dot Grid Background (Applied globally via globals.css, but enforcing z-index here) */}
             <div className="fixed inset-0 pointer-events-none z-0 bg-dot-grid opacity-30"></div>
 
-            {/* Ambient Flares/Glows - Unified Amber Theme (Visible only in dark mode) */}
+            {/* Ambient Flares/Glows - Unified Theme (Visible only in dark mode) */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden hidden dark:block">
-                <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[80%] h-[80%] rounded-full bg-amber-500/5 blur-[150px]"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/5 blur-[120px]"></div>
+                <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[80%] h-[80%] rounded-full bg-primary/5 blur-[150px]"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/5 blur-[120px]"></div>
             </div>
 
             {/* Floating Sidebar (Responsive: Slides in on mobile) */}
@@ -74,7 +75,7 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                         {/* Logo - Visible only when Sidebar is collapsed/hidden */}
                         {isSidebarCollapsed && (
                             <div className="flex items-center gap-3 mr-2 animate-fade-in">
-                                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 overflow-hidden">
+                                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden">
                                     <Image
                                         src="/deriverse.webp"
                                         alt="Deriverse"
@@ -83,7 +84,7 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                                         className="object-cover"
                                     />
                                 </div>
-                                <span className="text-lg font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent hidden sm:block">
+                                <span className="text-lg font-bold text-foreground hidden sm:block">
                                     Deriverse
                                 </span>
                             </div>
@@ -96,7 +97,7 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                                     className={cn(
                                         "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                                         viewMode === 'intelligence'
-                                            ? "bg-amber-500/10 text-amber-200 shadow-sm"
+                                            ? "bg-primary/10 text-primary shadow-sm"
                                             : "text-muted-foreground hover:text-foreground"
                                     )}
                                 >
@@ -108,7 +109,7 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                                     className={cn(
                                         "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                                         viewMode === 'terminal'
-                                            ? "bg-cyan-500/10 text-cyan-400 shadow-sm"
+                                            ? "bg-primary/10 text-primary shadow-sm"
                                             : "text-muted-foreground hover:text-foreground"
                                     )}
                                 >
@@ -160,7 +161,7 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                                     </div>
                                 </div>
                                 <div className="p-2 border-t border-border">
-                                    <Link href="/notifications" className="flex items-center justify-center gap-2 w-full py-2 text-xs font-medium text-amber-500 hover:text-amber-400 hover:bg-amber-500/5 rounded-lg transition-colors">
+                                    <Link href="/notifications" className="flex items-center justify-center gap-2 w-full py-2 text-xs font-medium text-primary hover:text-primary/80 hover:bg-primary/5 rounded-lg transition-colors">
                                         View all notifications
                                         <ArrowRight className="h-3 w-3" />
                                     </Link>
@@ -169,7 +170,7 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                         </Popover>
 
                         {/* Wallet Button */}
-                        <CustomWalletModal />
+                        <WalletProfilePopover />
                     </div>
                 </header>
 
@@ -178,7 +179,7 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                     {children}
                 </main>
 
-                <DisclaimerDialog />
+                {/* <DisclaimerDialog /> */}
                 <DashboardCompanion />
             </div>
         </div>
