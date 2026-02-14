@@ -109,6 +109,35 @@ The SDK automatically initializes when a wallet is connected and provides method
 
 ---
 
+## ⛓️ Blockchain Backend
+
+The project includes a dedicated Solana smart contract (Anchor) for on-chain analytics and trade journaling.
+
+- **Program Name**: `deriverse_analytics`
+- **Program ID**: `42RgC7CEYiGQPigBtixyn7dXqsua4ZxyJnD9Rn1ZQgPD` (Localnet/Devnet)
+- **Features**:
+  - **Trade Journaling**: Securely logs trade execution data and user notes on-chain for immutable history.
+  - **Auditable History**: Provides a transparent record of all trading activity.
+
+### Running the Backend
+
+1. **Navigate to the backend directory**
+   ```bash
+   cd backend/deriverse-analytics
+   ```
+
+2. **Build the program**
+   ```bash
+   anchor build
+   ```
+
+3. **Run tests**
+   ```bash
+   anchor test
+   ```
+
+---
+
 # Optional: Analytics / RPC Endpoints
 NEXT_PUBLIC_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
 NEXT_PUBLIC_API_ENDPOINT=https://api.deriverse.io/v1
@@ -135,5 +164,8 @@ OPENAI_API_KEY=sk-...
 │   ├── chat-store.ts     # AI Chat state management
 │   ├── wallet-store.ts   # Wallet session state
 │   └── mock-data.ts      # Realistic trade generators
-└── hooks/                # Custom hooks (e.g., useTradeMetrics)
+├── hooks/                # Custom hooks (e.g., useTradeMetrics)
+└── backend/              # Anchor workspace
+    ├── programs/         # Solana smart contracts (Rust)
+    └── tests/            # TypeScript integration tests
 ```
