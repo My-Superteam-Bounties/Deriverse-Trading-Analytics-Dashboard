@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "../lib/polyfill";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { WalletProvider } from "@/providers/WalletProvider";
@@ -30,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <GoogleTagManager gtmId="GTM-NFKFC7XD" />
       <body className={`${geist.variable} ${geist_mono.variable} font-sans antialiased`}>
         <ThemeProvider

@@ -1,3 +1,4 @@
+import '@/lib/polyfill';
 import { Engine } from '@deriverse/kit';
 import {
     address,
@@ -6,6 +7,7 @@ import {
     devnet,
     Address,
 } from '@solana/kit';
+import { PublicKey, Connection } from '@solana/web3.js';
 import { DERIVERSE_CONFIG } from './config';
 
 export interface InstrumentData {
@@ -247,9 +249,86 @@ export class DeriverseAnalyticsClient {
 
         if (!this.engine) throw new Error('Engine not initialized');
 
-        const trades: TradeHistory[] = [];
+        // Fallback to on-chain fetching since SDK doesn't expose history
+        return this.fetchOnChainTradeHistory(limit);
+    }
 
-        return trades;
+    /**
+     * Fetch trade history from on-chain transactions
+     * This is a "best effort" implementation that looks for interactions with the Deriverse program
+     */
+    /**
+     * Fetch trade history from on-chain transactions
+     * This is a "best effort" implementation that looks for interactions with the Deriverse program
+     */
+    private async fetchOnChainTradeHistory(limit: number): Promise<TradeHistory[]> {
+        if (!this.signerAddress || !this.engine) return [];
+
+        try {
+            // Use standard Connection from web3.js to avoid Kit type issues
+            const connection = new Connection(DERIVERSE_CONFIG.rpcUrl, 'confirmed');
+            const pubkey = new PublicKey(this.signerAddress);
+
+            console.log(`[Deriverse] Fetching history for ${pubkey.toBase58()} with Program ID: ${DERIVERSE_CONFIG.programId}`);
+
+            const signatures = await connection.getSignaturesForAddress(pubkey, { limit: limit * 2 });
+            console.log(`[Deriverse] Found ${signatures.length} signatures`);
+
+            const relevantSigs = signatures.filter(sig => !sig.err).map(sig => sig.signature);
+
+            if (relevantSigs.length === 0) {
+                console.log("[Deriverse] No successful signatures found");
+                return [];
+            }
+
+            const transactions = await connection.getParsedTransactions(relevantSigs, {
+                maxSupportedTransactionVersion: 0,
+                commitment: 'confirmed'
+            });
+            console.log(`[Deriverse] Parsed ${transactions.length} transactions`);
+
+            const history: TradeHistory[] = [];
+            const programId = DERIVERSE_CONFIG.programId;
+
+            for (const tx of transactions) {
+                if (!tx || !tx.meta || !tx.transaction) continue;
+
+                const accountKeys = tx.transaction.message.accountKeys.map(k => k.pubkey.toBase58());
+                const isPlaceholder = programId.includes("Placeholder");
+                const hasProgramInteraction = accountKeys.includes(programId);
+
+                if (!isPlaceholder && !hasProgramInteraction) continue;
+
+                const logs = tx.meta.logMessages || [];
+                const isTrade = logs.some(log =>
+                    log.includes("Instruction: NewSpotOrder") ||
+                    log.includes("Instruction: CancelSpotOrder") ||
+                    log.includes("Fill") ||
+                    log.includes("Trade") ||
+                    (isPlaceholder && (log.includes("Deriverse") || log.includes("Order") || log.includes("Instruction")))
+                );
+
+                if (isTrade) {
+                    history.push({
+                        orderId: tx.transaction.signatures[0],
+                        instrId: 0,
+                        symbol: 'DERIVERSE-ACTION',
+                        side: 'BUY',
+                        price: 0,
+                        size: 0,
+                        timestamp: new Date((tx.blockTime || 0) * 1000),
+                        fee: (tx.meta.fee || 0) / 1000000000,
+                        pnl: 0
+                    });
+                }
+            }
+
+            return history;
+
+        } catch (error) {
+            console.error("Failed to fetch on-chain history:", error);
+            return [];
+        }
     }
 
     /**
@@ -326,3 +405,4 @@ export class DeriverseAnalyticsClient {
         return this.engine;
     }
 }
+

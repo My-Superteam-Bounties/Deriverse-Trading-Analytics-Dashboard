@@ -15,8 +15,10 @@ export function DashboardCompanion() {
 
     useEffect(() => {
         if (!client || !isInitialized) {
-            setMood("analyzing");
-            setMessage("Connecting to Deriverse network...");
+            setTimeout(()=> {
+                setMood("analyzing");
+                setMessage("Connecting to Deriverse network...");
+            }, 0)
             return;
         }
 

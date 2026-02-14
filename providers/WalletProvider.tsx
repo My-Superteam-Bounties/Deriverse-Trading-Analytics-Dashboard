@@ -1,5 +1,6 @@
 "use client";
 
+import '@/lib/polyfill';
 import { useMemo, ReactNode, useCallback } from "react";
 import {
     ConnectionProvider,

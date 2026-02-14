@@ -1,3 +1,4 @@
+import '@/lib/polyfill';
 import { useState, useCallback, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { DeriverseAnalyticsClient } from '@/lib/deriverse/client';
@@ -24,6 +25,15 @@ export function useDeriverse() {
         try {
             setIsInitializing(true);
             setError(null);
+
+            // Ensure Buffer is available (Polyfill check)
+            if (typeof window !== 'undefined' && !window.Buffer) {
+                console.warn('Buffer not yet available, delaying initialization...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (!window.Buffer) {
+                    throw new Error('Buffer polyfill failed to load');
+                }
+            }
 
             console.log('Initializing Deriverse SDK with address:', publicKey.toBase58());
 
