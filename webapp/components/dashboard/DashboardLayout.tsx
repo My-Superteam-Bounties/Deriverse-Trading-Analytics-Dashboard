@@ -5,13 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { FloatingSidebar } from "./FloatingSidebar";
 import { MobileNav } from "./MobileNav";
-import { Bell, Search, Wallet, Command, Sparkles, ArrowRight, CheckCircle, AlertTriangle, Info } from "lucide-react";
+import { Bell, Search, Wallet, Command, Sparkles, ArrowRight, CheckCircle, AlertTriangle, Info, HelpCircle } from "lucide-react";
 import { CustomWalletModal } from "@/components/wallet/CustomWalletModal";
 import { WalletProfilePopover } from "@/components/wallet/WalletProfilePopover";
 import { DisclaimerDialog } from "./DisclaimerDialog";
 import { DashboardCompanion } from "./DashboardCompanion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { DashboardTour } from "./DashboardTour";
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -22,6 +23,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLayoutProps) {
     // Default to collapsed as requested, but try to restore from localStorage
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+    const [startTour, setStartTour] = useState(false);
 
     useEffect(() => {
         const savedState = localStorage.getItem("deriverse_sidebar_collapsed");
@@ -91,7 +93,7 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                         )}
 
                         {setViewMode && (
-                            <div className="hidden md:flex items-center p-0.5 rounded-lg bg-muted/50 border border-border backdrop-blur-md">
+                            <div id="tour-view-switcher" className="hidden md:flex items-center p-0.5 rounded-lg bg-muted/50 border border-border backdrop-blur-md">
                                 <button
                                     onClick={() => setViewMode('intelligence')}
                                     className={cn(
@@ -122,9 +124,17 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setStartTour(true)}
+                            className="flex items-center justify-center h-9 w-9 rounded-lg bg-card/80 border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-all shadow-sm backdrop-blur-sm"
+                            title="Start Tour"
+                        >
+                            <HelpCircle className="h-4 w-4" />
+                        </button>
+
                         <Popover>
                             <PopoverTrigger asChild>
-                                <button className="flex items-center justify-center h-9 w-9 rounded-lg bg-card/80 border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-all shadow-sm backdrop-blur-sm relative group">
+                                <button id="tour-notifications" className="flex items-center justify-center h-9 w-9 rounded-lg bg-card/80 border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-all shadow-sm backdrop-blur-sm relative group">
                                     <Bell className="h-4 w-4" />
                                     <span className="absolute top-2 right-2.5 h-1 w-1 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse"></span>
                                 </button>
@@ -170,7 +180,9 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                         </Popover>
 
                         {/* Wallet Button */}
-                        <WalletProfilePopover />
+                        <div id="tour-wallet-profile">
+                            <WalletProfilePopover />
+                        </div>
                     </div>
                 </header>
 
@@ -181,6 +193,13 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
 
                 {/* <DisclaimerDialog /> */}
                 <DashboardCompanion />
+                <DashboardTour
+                    currentView={viewMode}
+                    onSwitchView={setViewMode}
+                    startTour={startTour}
+                    onTourStart={() => setStartTour(false)}
+                    onTourEnd={() => setStartTour(false)}
+                />
             </div>
         </div>
     );

@@ -4,7 +4,11 @@ import { useDeriverseData } from "@/hooks/useDeriverseData";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 
-export function RecentTrades() {
+interface RecentTradesProps {
+    onTradeSelect?: (trade: any) => void;
+}
+
+export function RecentTrades({ onTradeSelect }: RecentTradesProps) {
     const { data, isLoading } = useDeriverseData();
 
     if (isLoading) {
@@ -42,15 +46,19 @@ export function RecentTrades() {
                     </thead>
                     <tbody>
                         {trades.map((trade, i) => (
-                            <tr key={i} className="border-b border-border/30 hover:bg-muted/30 transition-colors">
-                                <td className="py-3 px-2 text-muted-foreground">
+                            <tr
+                                key={i}
+                                className="border-b border-border/30 hover:bg-muted/30 transition-colors cursor-pointer group"
+                                onClick={() => onTradeSelect && onTradeSelect(trade)}
+                            >
+                                <td className="py-3 px-2 text-muted-foreground group-hover:text-foreground transition-colors">
                                     {format(trade.timestamp, "MMM dd, HH:mm")}
                                 </td>
                                 <td className="py-3 px-2 font-medium">{trade.symbol}</td>
                                 <td className="py-3 px-2">
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${trade.side === "BUY"
-                                            ? "bg-green-500/10 text-green-400"
-                                            : "bg-red-500/10 text-red-400"
+                                        ? "bg-green-500/10 text-green-400"
+                                        : "bg-red-500/10 text-red-400"
                                         }`}>
                                         {trade.side}
                                     </span>

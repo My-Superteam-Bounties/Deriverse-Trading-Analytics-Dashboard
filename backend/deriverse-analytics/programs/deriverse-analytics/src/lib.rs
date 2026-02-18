@@ -9,12 +9,13 @@ const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 pub mod deriverse_analytics {
     use super::*;
 
-    pub fn add_journal(ctx: Context<AddJournal>, data: String, trade_hash: Pubkey) -> Result<()> {
+    pub fn add_journal(ctx: Context<AddJournal>, data: String, trade_hash: Pubkey, entry_type: u8) -> Result<()> {
         let journal = &mut ctx.accounts.journal;
         journal.authority = ctx.accounts.authority.key();
         journal.timestamp = Clock::get()?.unix_timestamp as u64;
         journal.trade_hash = trade_hash.key();
         journal.data = data.to_string();
+        journal.entry_type = entry_type;
         Ok(())
     }
 
@@ -29,10 +30,12 @@ pub mod deriverse_analytics {
 
 #[derive(Accounts)]
 pub struct AddJournal<'info> {
-    #[account(init, payer = authority, space = Journal::INIT_SPACE + ANCHOR_DISCRIMINATOR_SIZE, seeds = [b"journal", authority.key().as_ref()], bump)]
+    #[account(init, payer = authority, space = Journal::INIT_SPACE + ANCHOR_DISCRIMINATOR_SIZE, seeds = [b"journal", authority.key().as_ref(), trade_hash.as_ref()], bump)]
     pub journal: Account<'info, Journal>,
     #[account(mut)]
     pub authority: Signer<'info>,
+    /// CHECK: The trade hash is just used as a seed
+    pub trade_hash: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -44,6 +47,7 @@ pub struct Journal {
     pub trade_hash: Pubkey,
     #[max_len(MAX_JOURNAL_LENGTH)]
     pub data: String,
+    pub entry_type: u8, // 0: Onchain, 1: Hybrid, 2: Offchain
 }
 
 // #[derive(Accounts)]

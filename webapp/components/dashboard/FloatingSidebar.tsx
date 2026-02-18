@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   AlertCircle,
   LifeBuoy,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWalletStore } from "@/lib/wallet-store";
@@ -30,6 +31,7 @@ export function FloatingSidebar({ isCollapsed, toggleCollapse }: FloatingSidebar
     { label: "Overview", icon: LayoutDashboard, href: "/" },
     { label: "Performance", icon: LineChart, href: "/performance" },
     { label: "Trade History", icon: History, href: "/history" },
+    { label: "Journal", icon: BookOpen, href: "/journal" },
     { label: "Analytics", icon: PieChart, href: "/analytics" },
     { label: "Settings", icon: Settings, href: "/settings" },
   ];
@@ -38,6 +40,7 @@ export function FloatingSidebar({ isCollapsed, toggleCollapse }: FloatingSidebar
     <>
       {/* Detached Toggle Button (Always Visible if Sidebar is Closed) */}
       <button
+        id="tour-sidebar-toggle"
         onClick={toggleCollapse}
         className={cn(
           "fixed left-4 top-8 z-[60] h-9 w-9 rounded-lg bg-sidebar border border-sidebar-border hidden md:flex items-center justify-center text-sidebar-foreground/70 hover:text-sidebar-foreground transition-all shadow-xl hover:scale-105 active:scale-95 group",
@@ -114,14 +117,13 @@ export function FloatingSidebar({ isCollapsed, toggleCollapse }: FloatingSidebar
                   "flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden",
                   isDisabled && "opacity-40 cursor-not-allowed",
                   !isDisabled && isActive
-                    ? "bg-primary/10 text-primary shadow-sm border border-primary/20"
-                    : !isDisabled && "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-bold shadow-sm"
+                    : !isDisabled && "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
                 )}
               >
-                {isActive && !isDisabled && <div className="absolute inset-0 bg-primary/5 z-0"></div>}
                 <item.icon className={cn("h-5 w-5 transition-colors shrink-0 z-10", isActive && !isDisabled ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
 
-                <span className={cn("ml-3 truncate animate-fade-in z-10", isActive && !isDisabled && "font-bold")}>{item.label}</span>
+                <span className="ml-3 truncate animate-fade-in z-10">{item.label}</span>
               </Link>
             );
           })}

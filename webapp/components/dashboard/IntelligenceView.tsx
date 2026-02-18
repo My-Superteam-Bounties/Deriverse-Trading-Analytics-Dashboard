@@ -107,7 +107,7 @@ export function IntelligenceView({ onSwitchToTerminal }: IntelligenceViewProps) 
                         {/* Initial Input Interface */}
                         <div className="w-full max-w-2xl relative group mx-auto mt-12">
                             <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity blur-lg duration-500"></div>
-                            <div className="relative bg-card border border-border rounded-2xl p-2 flex items-center shadow-2xl focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                            <div id="tour-intelligence-input" className="relative bg-card border border-border rounded-2xl p-2 flex items-center shadow-2xl focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                                 <div className="h-10 w-10 rounded-xl flex items-center justify-center text-muted-foreground shrink-0">
                                     <Search className="h-5 w-5" />
                                 </div>

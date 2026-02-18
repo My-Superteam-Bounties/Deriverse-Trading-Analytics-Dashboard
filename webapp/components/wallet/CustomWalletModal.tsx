@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletName } from "@solana/wallet-adapter-base";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Wallet, ExternalLink, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Wallet, ExternalLink, AlertCircle, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWalletStore } from "@/lib/wallet-store";
+import { Button } from "@/components/ui/button";
 
 interface WalletOption {
     name: string;
@@ -40,222 +41,195 @@ interface CustomWalletModalProps {
 
 export function CustomWalletModal({ className, children }: CustomWalletModalProps) {
     const [open, setOpen] = useState(false);
-    const [isConnectingTo, setIsConnectingTo] = useState<string | null>(null);
-    const [connectionError, setConnectionError] = useState<string | null>(null);
     const [installedWallets, setInstalledWallets] = useState<Set<string>>(new Set());
+    const [error, setError] = useState<string | null>(null);
+    const [isConnectingTo, setIsConnectingTo] = useState<string | null>(null);
 
-    const { select, connect, connected, disconnect, publicKey, wallet } = useWallet();
+    const { wallets, select, connect, connected, connecting, disconnecting, disconnect, publicKey, wallet } = useWallet();
     const { setWalletState } = useWalletStore();
 
-    // Pending wallet selection for robust connection flow
-    const [pendingWalletName, setPendingWalletName] = useState<WalletName | null>(null);
-
-    // Sync wallet adapter state with our store
+    // Sync store
     useEffect(() => {
-        if (connected && publicKey && wallet) {
-            setWalletState({
-                isConnected: true,
-                address: publicKey.toBase58(),
-                walletType: wallet.adapter.name,
-                balance: 0,
-            });
-        } else {
-            setWalletState({
-                isConnected: false,
-                address: null,
-                walletType: null,
-                balance: 0,
-            });
+        setWalletState({
+            isConnected: !!connected && !!publicKey,
+            address: publicKey?.toBase58() || null,
+            walletType: wallet?.adapter.name || null,
+            balance: 0,
+        });
+
+        if (connected) {
+            setOpen(false);
+            setIsConnectingTo(null);
         }
     }, [connected, publicKey, wallet, setWalletState]);
 
     // Check installed wallets
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const checkWallets = () => {
+        const check = () => {
             const installed = new Set<string>();
             SUPPORTED_WALLETS.forEach((w) => {
                 if (w.checkInstalled()) installed.add(w.name);
             });
             setInstalledWallets(installed);
         };
-        checkWallets();
-        const timeout = setTimeout(checkWallets, 1000);
-        return () => clearTimeout(timeout);
+        check();
+        const t = setInterval(check, 1000);
+        return () => clearInterval(t);
     }, []);
 
-    // Handle robust connection: Wait for wallet to be selected, then connect
-    useEffect(() => {
-        if (pendingWalletName && wallet && wallet.adapter.name === pendingWalletName) {
-            const attemptConnect = async () => {
-                try {
-                    // Slight delay to ensure adapter is ready (crucial for some adapters)
-                    await new Promise(r => setTimeout(r, 100));
-                    await connect();
-                    setOpen(false);
-                    setPendingWalletName(null);
-                    setIsConnectingTo(null);
-                } catch (err: any) {
-                    console.error("Connection error:", err);
-                    let msg = "Failed to connect.";
-                    if (err?.message?.includes("User rejected")) msg = "Connection rejected.";
-                    else if (err?.message?.includes("WalletNotReadyError")) msg = "Wallet not ready. Please unlock.";
-                    else msg = err?.message || msg;
-
-                    setConnectionError(msg);
-                    setPendingWalletName(null);
-                    setIsConnectingTo(null);
-                }
-            };
-            attemptConnect();
-        }
-    }, [pendingWalletName, wallet, connect]);
-
-    const handleSelectWallet = (walletName: WalletName, walletOption: WalletOption) => {
-        setConnectionError(null);
-        if (!walletOption.checkInstalled()) {
-            setConnectionError(`${walletOption.name} is not installed.`);
-            return;
-        }
-
+    const handleConnect = useCallback(async (walletName: WalletName) => {
+        setError(null);
         setIsConnectingTo(walletName);
-        select(walletName); // Triggers update to 'wallet' object
-        setPendingWalletName(walletName); // Signals effect to connect when ready
-    };
 
+        try {
+            // Find the wallet adapter instance from the hook's list
+            const selectedWallet = wallets.find(w => w.adapter.name === walletName);
+
+            if (!selectedWallet) {
+                throw new Error("Wallet adapter not found");
+            }
+
+            // 1. Select it in the global state
+            select(walletName);
+
+            // 2. Connect directly to preserve user gesture (fixing the popup blocker issue)
+            try {
+                await selectedWallet.adapter.connect();
+            } catch (err: any) {
+                // If the error is "Already connected" or similar, we might want to ignore it 
+                // or handle it gracefully, but usually connect() throws if failed.
+                throw err;
+            }
+
+        } catch (err: any) {
+            console.error("Connect error:", err);
+            if (err.name === "WalletWindowClosedError") {
+                setError("Request cancelled.");
+            } else {
+                setError(err.message || "Failed to connect.");
+            }
+            setIsConnectingTo(null);
+        }
+    }, [select, wallets]);
+
+
+    // Handle Disconnect
     const handleDisconnect = async () => {
-        try { await disconnect(); } catch (err) { console.error(err); }
+        try {
+            await disconnect();
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     if (connected && publicKey) {
         return (
-            <button
+            <Button
+                variant="outline"
                 onClick={handleDisconnect}
                 className={cn(
-                    "flex items-center gap-2 px-4 h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-all shadow-lg shadow-primary/20",
+                    "gap-2 bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary font-mono",
                     className
                 )}
             >
-                <Wallet className="h-4 w-4" />
-                <span className="hidden sm:inline">
-                    {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
-                </span>
-                <span className="sm:hidden">Connected</span>
-            </button>
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+            </Button>
         );
     }
 
     return (
-        <>
-            <button
-                onClick={() => { setOpen(true); setConnectionError(null); }}
-                className={cn(
-                    "flex items-center gap-2 px-4 h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-all shadow-lg shadow-primary/20",
-                    className
-                )}
+        <Dialog open={open} onOpenChange={(val) => {
+            if (!val) {
+                setError(null);
+                setIsConnectingTo(null);
+            }
+            setOpen(val);
+        }}>
+            <Button
+                onClick={() => setOpen(true)}
+                className={cn("gap-2 font-bold", className)}
             >
                 {children || (
                     <>
-                        <Wallet className="h-4 w-4" />
-                        Connect Wallet
+                        <Wallet className="w-4 h-4" /> Connect Wallet
                     </>
                 )}
-            </button>
+            </Button>
 
-            <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="sm:max-w-md bg-card border-primary/20">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-primary">
-                            Connect Wallet
-                        </DialogTitle>
-                        <div className="sr-only"> {/* Screen reader only description */}
-                            Select a wallet to connect to Deriverse Analytics.
-                        </div>
-                    </DialogHeader>
+            <DialogContent className="sm:max-w-[400px] p-0 bg-[#09090B] border-white/10 overflow-hidden gap-0">
+                <div className="p-6 pb-2">
+                    <div className="flex items-center justify-between mb-2">
+                        <DialogTitle className="text-xl font-bold">Connect Wallet</DialogTitle>
+                        {/* Close button handled by Dialog primitive, but we can add valid close logic if needed */}
+                    </div>
+                    <p className="text-sm text-zinc-400">Select your Solana wallet to continue.</p>
+                </div>
 
-                    {connectionError && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                            <p className="text-sm text-red-500 flex items-start gap-2">
-                                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                                <span>{connectionError}</span>
-                            </p>
+                <div className="p-4 pt-2 space-y-2">
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-3">
+                            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                            <p className="text-sm text-red-400 leading-tight">{error}</p>
                         </div>
                     )}
 
-                    <div className="space-y-3 mt-4">
-                        {SUPPORTED_WALLETS.map((walletOption) => {
-                            const installed = installedWallets.has(walletOption.name);
-                            const isConnecting = isConnectingTo === walletOption.adapter;
+                    {SUPPORTED_WALLETS.map((w) => {
+                        const isInstalled = installedWallets.has(w.name);
+                        const isCurrent = wallet?.adapter.name === w.name;
+                        const isBusy = isConnectingTo === w.name; // Only busy if explicitly connecting to this one via UI
 
-                            return (
-                                <div key={walletOption.name}>
-                                    {installed ? (
-                                        <button
-                                            onClick={() => handleSelectWallet(walletOption.adapter, walletOption)}
-                                            disabled={isConnecting}
-                                            className={cn(
-                                                "w-full flex items-center gap-4 p-4 rounded-xl border transition-all",
-                                                "bg-muted/50 border-border hover:bg-primary/10 hover:border-primary/30",
-                                                "disabled:opacity-50 disabled:cursor-not-allowed"
-                                            )}
-                                        >
-                                            <img
-                                                src={walletOption.icon}
-                                                alt={walletOption.name}
-                                                className="w-10 h-10 rounded-lg"
-                                                onError={(e) => {
-                                                    // Fallback to a generic wallet icon if image fails to load
-                                                    e.currentTarget.style.display = 'none';
-                                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                                                    if (fallback) fallback.style.display = 'flex';
-                                                }}
-                                            />
-                                            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold text-lg hidden shadow-lg">
-                                                {walletOption.name[0]}
-                                            </div>
-                                            <div className="flex-1 text-left">
-                                                <p className="font-medium text-foreground">{walletOption.name}</p>
-                                                {isConnecting && (
-                                                    <p className="text-xs text-primary flex items-center gap-1 animate-pulse">
-                                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                                        Requesting connection...
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </button>
-                                    ) : (
-                                        <a
-                                            href={walletOption.installUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="w-full flex items-center gap-4 p-4 rounded-xl border transition-all bg-muted/30 border-border opacity-60 hover:opacity-100"
-                                        >
-                                            <img
-                                                src={walletOption.icon}
-                                                alt={walletOption.name}
-                                                className="w-10 h-10 rounded-lg grayscale"
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                                                    if (fallback) fallback.style.display = 'flex';
-                                                }}
-                                            />
-                                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground font-bold text-lg hidden grayscale">
-                                                {walletOption.name[0]}
-                                            </div>
-                                            <div className="flex-1 text-left">
-                                                <p className="font-medium text-muted-foreground">{walletOption.name}</p>
-                                                <p className="text-xs text-primary">Install Wallet</p>
-                                            </div>
-                                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                                        </a>
+                        return (
+                            <div key={w.name} className="relative group">
+                                <button
+                                    onClick={() => isInstalled ? handleConnect(w.adapter) : window.open(w.installUrl, '_blank')}
+                                    disabled={isBusy || (!!isConnectingTo && isConnectingTo !== w.name)}
+                                    className={cn(
+                                        "w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left",
+                                        "hover:bg-white/5 active:scale-[0.98]",
+                                        isCurrent ? "border-primary/50 bg-primary/5" : "border-white/5 bg-white/[0.02]",
+                                        !isInstalled && "opacity-75"
                                     )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </>
+                                >
+                                    <div className="relative w-12 h-12 shrink-0">
+                                        <div className={cn(
+                                            "absolute inset-0 bg-primary/20 blur-xl rounded-full transition-opacity",
+                                            isCurrent ? "opacity-100" : "opacity-0 group-hover:opacity-50"
+                                        )} />
+                                        <img
+                                            src={w.icon}
+                                            alt={w.name}
+                                            className="relative w-full h-full object-contain drop-shadow-lg"
+                                        />
+                                        {!isInstalled && (
+                                            <div className="absolute -bottom-1 -right-1 bg-zinc-800 rounded-full p-0.5 border border-zinc-700">
+                                                <ExternalLink className="w-3 h-3 text-zinc-400" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-bold text-lg">{w.name}</span>
+                                            {isBusy && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                                        </div>
+                                        <p className="text-xs text-zinc-500 truncate">
+                                            {isInstalled ? (isBusy ? "Requesting connection..." : "Detected") : "Not Installed"}
+                                        </p>
+                                    </div>
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="p-4 bg-white/5 border-t border-white/5">
+                    <p className="text-center text-xs text-zinc-500">
+                        By connecting, you agree to our Terms of Service.
+                    </p>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 }

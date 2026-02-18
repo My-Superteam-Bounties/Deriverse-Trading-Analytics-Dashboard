@@ -69,6 +69,7 @@ export function EmptyState({ walletAddress }: EmptyStateProps) {
                         href="https://alpha.deriverse.io"
                         target="_blank"
                         rel="noopener noreferrer"
+                        id="tour-empty-state-action"
                         className="inline-flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105"
                     >
                         <Rocket className="h-5 w-5" />

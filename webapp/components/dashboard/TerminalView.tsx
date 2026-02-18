@@ -8,7 +8,7 @@ import { RecentTrades } from "@/components/dashboard/RecentTrades";
 import { PerformanceWidget } from "@/components/dashboard/PerformanceWidget";
 import { WalletGuard } from "@/components/dashboard/WalletGuard";
 import { EmptyState } from "@/components/dashboard/EmptyState";
-import { LoadingState } from "@/components/dashboard/LoadingState";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import {
     Select,
     SelectContent,
@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { TradingJournal } from "./TradingJournal";
 import { DashboardOverviewDialog } from "./DashboardOverviewDialog";
 import { useDeriverse } from "@/hooks/useDeriverse";
+import { TradeDetailsSheet } from "./TradeDetailsSheet";
 
 
 export function TerminalView() {
@@ -34,33 +35,26 @@ export function TerminalView() {
     // Dialog State
     const [showJournal, setShowJournal] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
+    const [selectedTrade, setSelectedTrade] = useState<any>(null);
+    const [pendingJournalTrade, setPendingJournalTrade] = useState<any>(null);
 
-    // Fetch Data with Filters
     // Fetch Data with Filters
     const { data: filteredData, isLoading } = useDeriverseData({
         dateRange: timeRange,
         symbol: selectedSymbol
     });
 
-    // Also fetch "All" data just to get the list of symbols for the dropdown
-    // This is a bit inefficient (double fetch) but clean. 
-    // Optimization: returning 'instruments' or unique symbols from the hook even when filtered would be better.
-    // For now, we'll extract unique symbols from the *filtered* data if "ALL" is selected, or just hardcode common ones + dynamic
-    // Better yet, let's just use the 'instruments' list from the hook if available.
-
     const uniqueSymbols = useMemo(() => {
         if (!filteredData) return [];
         return Array.from(new Set(filteredData.trades.map(t => t.symbol)));
     }, [filteredData]);
-
-
 
     const { isInitialized } = useDeriverse();
 
     return (
         <WalletGuard>
             {!filteredData ? (
-                <LoadingState />
+                <DashboardSkeleton />
             ) : filteredData.trades.length === 0 ? (
                 <EmptyState walletAddress={publicKey?.toBase58()} />
             ) : (
@@ -76,17 +70,28 @@ export function TerminalView() {
                         <div className="flex items-center gap-3">
 
                             {/* Quick Actions */}
-                            <div className="flex items-center gap-2 bg-card/50 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm mr-2">
+                            <div className="flex items-center gap-2 bg-card/50 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm mr-2 relative group">
+                                {/* Floating Label for Journal */}
+                                <div className="absolute -top-8 left-0 bg-primary text-primary-foreground border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg shadow-primary/20 whitespace-nowrap pointer-events-none animate-bounce-slow z-50">
+                                    Journal
+                                    <div className="absolute bottom-[-4px] left-4 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-primary"></div>
+                                </div>
+
                                 <Button
+                                    id="tour-add-journal"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                    onClick={() => setShowJournal(true)}
+                                    className="h-9 w-9 border-primary/30 text-primary shadow-[0_0_10px_rgba(34,197,94,0.1)] bg-primary/5 hover:bg-primary/20 hover:scale-105 transition-all"
+                                    onClick={() => {
+                                        setPendingJournalTrade(null); // Clear specific trade for general entry
+                                        setShowJournal(true);
+                                    }}
                                     title="Add Journal Entry"
                                 >
                                     <PenLine className="h-4 w-4" />
                                 </Button>
                                 <Button
+                                    id="tour-friendly-overview"
                                     variant="ghost"
                                     size="icon"
                                     className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10"
@@ -97,7 +102,7 @@ export function TerminalView() {
                                 </Button>
                             </div>
 
-                            <div className="flex items-center gap-3 bg-card/50 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
+                            <div id="tour-terminal-filters" className="flex items-center gap-3 bg-card/50 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
                                 {/* Symbol Filter */}
                                 <div className="w-[140px]">
                                     <Select value={selectedSymbol} onValueChange={setSelectedSymbol}>
@@ -154,7 +159,7 @@ export function TerminalView() {
 
                     {/* Table */}
                     <div className="card-gradient rounded-2xl p-6">
-                        <RecentTrades />
+                        <RecentTrades onTradeSelect={setSelectedTrade} />
                     </div>
                 </div>
             )}
@@ -162,8 +167,11 @@ export function TerminalView() {
             {/* Dialogs */}
             <TradingJournal
                 open={showJournal}
-                onOpenChange={setShowJournal}
-                trade={null} // Default to null to trigger "Select Trade" mode
+                onOpenChange={(open) => {
+                    setShowJournal(open);
+                    if (!open) setPendingJournalTrade(null); // Reset on close
+                }}
+                trade={pendingJournalTrade} // Pass the selected trade
                 recentTrades={filteredData?.trades || []}
             />
 
@@ -171,6 +179,17 @@ export function TerminalView() {
                 open={showOverview}
                 onOpenChange={setShowOverview}
                 data={filteredData}
+            />
+
+            <TradeDetailsSheet
+                open={!!selectedTrade}
+                onOpenChange={(open) => !open && setSelectedTrade(null)}
+                trade={selectedTrade}
+                onAddJournal={(trade) => {
+                    setPendingJournalTrade(trade); // Set the specific trade
+                    setSelectedTrade(null); // Close sheet
+                    setShowJournal(true);   // Open Dialog
+                }}
             />
 
         </WalletGuard>

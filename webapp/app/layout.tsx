@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { WalletProvider } from "@/providers/WalletProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 import "./globals.css";
 
 import { GoogleTagManager } from '@next/third-parties/google'
@@ -42,7 +43,9 @@ export default function RootLayout({
           themes={["light", "dark", "deriverse"]}
         >
           <WalletProvider>
-            {children}
+            <SessionProvider>
+              {children}
+            </SessionProvider>
           </WalletProvider>
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>
