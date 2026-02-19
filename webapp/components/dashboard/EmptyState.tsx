@@ -1,12 +1,15 @@
 "use client";
 
-import { Rocket, TrendingUp, Brain, History, Shield, BarChart3, ExternalLink } from "lucide-react";
+import { Rocket, TrendingUp, Brain, History, Shield, BarChart3, ExternalLink, FlaskConical } from "lucide-react";
+import { useAppStore } from "@/lib/app-store";
 
 interface EmptyStateProps {
     walletAddress?: string;
 }
 
 export function EmptyState({ walletAddress }: EmptyStateProps) {
+    const { isDemoMode, toggleDemoMode } = useAppStore();
+
     const features = [
         { icon: TrendingUp, text: "Real-time PnL tracking" },
         { icon: BarChart3, text: "Win rate analytics" },
@@ -42,6 +45,29 @@ export function EmptyState({ walletAddress }: EmptyStateProps) {
                         </p>
                     )}
                 </div>
+
+                {/* Demo Mode CTA */}
+                {!isDemoMode && (
+                    <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 rounded-2xl p-6 space-y-4">
+                        <div className="flex items-center justify-center gap-2 text-amber-500">
+                            <FlaskConical className="h-5 w-5" />
+                            <span className="text-sm font-bold uppercase tracking-wider">Try Demo Mode</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                            Explore the full dashboard with sample trading data — see PnL charts, win rate analytics, AI insights, and more before you start trading.
+                        </p>
+                        <button
+                            onClick={() => {
+                                toggleDemoMode();
+                                setTimeout(() => window.location.reload(), 100);
+                            }}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                        >
+                            <FlaskConical className="h-4 w-4" />
+                            Activate Demo Mode
+                        </button>
+                    </div>
+                )}
 
                 {/* Features List */}
                 <div className="bg-card/30 border border-border rounded-2xl p-8 space-y-4">

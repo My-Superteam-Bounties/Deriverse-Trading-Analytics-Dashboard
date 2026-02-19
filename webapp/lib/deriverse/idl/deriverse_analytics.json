@@ -1,0 +1,150 @@
+{
+  "address": "FVA1Zm6XdXVrquowDexrDuKyChmMY7oYG2Go7UEVhtz1",
+  "metadata": {
+    "name": "deriverse_analytics",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "add_journal",
+      "discriminator": [
+        64,
+        38,
+        81,
+        35,
+        93,
+        91,
+        13,
+        159
+      ],
+      "accounts": [
+        {
+          "name": "journal",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  117,
+                  114,
+                  110,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "trade_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "trade_hash"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "data",
+          "type": "string"
+        },
+        {
+          "name": "trade_hash",
+          "type": "pubkey"
+        },
+        {
+          "name": "entry_type",
+          "type": {
+            "defined": {
+              "name": "EntryType"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Journal",
+      "discriminator": [
+        246,
+        141,
+        106,
+        208,
+        98,
+        92,
+        66,
+        208
+      ]
+    }
+  ],
+  "types": [
+    {
+      "name": "EntryType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Onchain"
+          },
+          {
+            "name": "Hybrid"
+          },
+          {
+            "name": "Offchain"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Journal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "u64"
+          },
+          {
+            "name": "trade_hash",
+            "type": "pubkey"
+          },
+          {
+            "name": "data",
+            "type": "string"
+          },
+          {
+            "name": "entry_type",
+            "type": {
+              "defined": {
+                "name": "EntryType"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

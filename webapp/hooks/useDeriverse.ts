@@ -2,6 +2,7 @@ import '@/lib/polyfill';
 import { useState, useCallback, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { DeriverseAnalyticsClient } from '@/lib/deriverse/client';
+import { getIsTesting } from '@/lib/deriverse/config';
 
 export function useDeriverse() {
     const { publicKey, connected } = useWallet();
@@ -11,8 +12,10 @@ export function useDeriverse() {
     const [error, setError] = useState<Error | null>(null);
 
     const initialize = useCallback(async () => {
-        if (!connected || !publicKey) {
-            console.log('Wallet not connected, skipping Deriverse initialization');
+        const isTesting = getIsTesting();
+
+        if ((!connected || !publicKey) && !isTesting) {
+            console.log('Wallet not connected and not in demo mode, skipping Deriverse initialization');
             return;
         }
 
@@ -35,7 +38,8 @@ export function useDeriverse() {
                 }
             }
 
-            console.log('Initializing Deriverse SDK with address:', publicKey.toBase58());
+            const targetAddress = publicKey ? publicKey.toBase58() : '11111111111111111111111111111111';
+            console.log('Initializing Deriverse SDK with address:', targetAddress, isTesting ? '(DEMO)' : '(LIVE)');
 
             // Create a timeout promise
             const timeoutPromise = new Promise((_, reject) =>
@@ -46,7 +50,7 @@ export function useDeriverse() {
 
             // Race between initialization and timeout
             await Promise.race([
-                newClient.initialize(publicKey.toBase58()),
+                newClient.initialize(targetAddress),
                 timeoutPromise
             ]);
 
@@ -63,9 +67,11 @@ export function useDeriverse() {
         }
     }, [connected, publicKey, isInitialized]);
 
-    // Auto-initialize when wallet connects
+    // Auto-initialize when wallet connects OR if in testing mode
     useEffect(() => {
-        if (!connected || !publicKey) {
+        const isTesting = getIsTesting();
+
+        if ((!connected || !publicKey) && !isTesting) {
             setClient(null);
             setIsInitialized(false);
             setError(null);

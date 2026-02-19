@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FloatingSidebar } from "./FloatingSidebar";
 import { MobileNav } from "./MobileNav";
-import { Bell, Search, Wallet, Command, Sparkles, ArrowRight, CheckCircle, AlertTriangle, Info, HelpCircle } from "lucide-react";
+import { Bell, Search, Wallet, Command, Sparkles, ArrowRight, CheckCircle, AlertTriangle, Info, HelpCircle, FlaskConical, X, Megaphone } from "lucide-react";
 import { CustomWalletModal } from "@/components/wallet/CustomWalletModal";
 import { WalletProfilePopover } from "@/components/wallet/WalletProfilePopover";
 import { DisclaimerDialog } from "./DisclaimerDialog";
@@ -13,6 +13,8 @@ import { DashboardCompanion } from "./DashboardCompanion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { DashboardTour } from "./DashboardTour";
+import { useAppStore } from "@/lib/app-store";
+
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -24,12 +26,19 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
     // Default to collapsed as requested, but try to restore from localStorage
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [startTour, setStartTour] = useState(false);
+    const { isDemoMode, toggleDemoMode } = useAppStore();
+    const [mounted, setMounted] = useState(false);
+    const [bannerDismissed, setBannerDismissed] = useState(true); // default hidden to avoid flash
 
     useEffect(() => {
+        setMounted(true);
         const savedState = localStorage.getItem("deriverse_sidebar_collapsed");
         if (savedState !== null) {
             setIsSidebarCollapsed(savedState === "true");
         }
+        // Check if changelog banner was dismissed
+        const dismissed = localStorage.getItem("deriverse_banner_dismissed_v1");
+        setBannerDismissed(dismissed === "true");
     }, []);
 
     const toggleSidebar = () => {
@@ -71,6 +80,27 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                     !isSidebarCollapsed ? "md:pl-72" : "md:pl-20"
                 )}
             >
+                {/* Changelog Notification Banner */}
+                {mounted && !bannerDismissed && (
+                    <div className="flex items-center justify-between gap-3 mb-4 px-4 py-2 rounded-lg bg-primary/10 border border-primary/20 backdrop-blur-sm animate-fade-in">
+                        <Link href="/support/changelog" className="flex items-center gap-2 text-xs text-primary hover:text-primary/80 transition-colors font-medium">
+                            <Megaphone className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>🎉 <strong>What's New</strong> — Demo Mode, AI Intelligence, Trade Journaling & more</span>
+                            <ArrowRight className="w-3 h-3 flex-shrink-0" />
+                        </Link>
+                        <button
+                            onClick={() => {
+                                setBannerDismissed(true);
+                                localStorage.setItem("deriverse_banner_dismissed_v1", "true");
+                            }}
+                            className="flex-shrink-0 p-1 rounded-md text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                            title="Dismiss"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                )}
+
                 <header className="flex items-center justify-between mb-8 h-9">
                     {/* Left: View Switcher */}
                     <div className="flex items-center gap-4">
@@ -122,8 +152,32 @@ export function DashboardLayout({ children, viewMode, setViewMode }: DashboardLa
                         )}
                     </div>
 
-                    {/* Right: Actions */}
+
                     <div className="flex items-center gap-3">
+                        {/* Demo Mode Toggle */}
+                        {mounted && (
+                            <button
+                                onClick={() => {
+                                    toggleDemoMode();
+                                    setTimeout(() => window.location.reload(), 100);
+                                }}
+                                className={cn(
+                                    "flex items-center gap-2 h-9 px-3 rounded-lg border transition-all duration-200 backdrop-blur-sm text-xs font-semibold",
+                                    isDemoMode
+                                        ? "bg-amber-500/15 border-amber-500/40 text-amber-500 hover:bg-amber-500/25 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                                        : "bg-card/80 border-border text-muted-foreground hover:text-foreground hover:bg-accent shadow-sm"
+                                )}
+                                title={isDemoMode ? "Demo Mode is ON — Click to switch to Live" : "Click to try Demo Mode with sample data"}
+                            >
+                                <FlaskConical className="w-3.5 h-3.5" />
+                                <span>Demo</span>
+                                <span className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    isDemoMode ? "bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.6)]" : "bg-muted-foreground/40"
+                                )} />
+                            </button>
+                        )}
+
                         <button
                             onClick={() => setStartTour(true)}
                             className="flex items-center justify-center h-9 w-9 rounded-lg bg-card/80 border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-all shadow-sm backdrop-blur-sm"

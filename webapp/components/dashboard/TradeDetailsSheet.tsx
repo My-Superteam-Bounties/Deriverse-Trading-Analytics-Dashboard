@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { Bot, ArrowRight, TrendingUp, TrendingDown, Clock, Hash, DollarSign, PenLine, Save } from "lucide-react";
 import { useState, useEffect } from "react";
+import { invokeAI } from "@/lib/ai/client";
 
 interface Trade {
     timestamp: number;
@@ -30,18 +31,29 @@ export function TradeDetailsSheet({ open, onOpenChange, trade, onAddJournal }: T
     const [aiAnalysis, setAiAnalysis] = useState<string>("");
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-    // Mock AI Analysis generation when sheet opens
+    // Real AI Analysis when sheet opens
     useEffect(() => {
         if (open && trade) {
             setIsAnalyzing(true);
             setAiAnalysis("");
 
-            // Simulate AI thinking
-            setTimeout(() => {
-                const analysis = generateMockAnalysis(trade);
-                setAiAnalysis(analysis);
-                setIsAnalyzing(false);
-            }, 1500);
+            const prompt = `You are a professional trading analyst. Analyze this trade and provide a concise 3-4 sentence insight:
+- Symbol: ${trade.symbol}
+- Side: ${trade.side}
+- Entry Price: $${trade.price.toFixed(2)}
+- Size: ${trade.size.toFixed(4)}
+- PnL: $${trade.pnl?.toFixed(2) ?? 'N/A'}
+- Fee: $${trade.fee?.toFixed(4) ?? 'N/A'}
+- Time: ${format(trade.timestamp, 'MMM dd, yyyy HH:mm')}
+
+Comment on execution quality, risk/reward, and one actionable suggestion. Be direct and specific.`;
+
+            invokeAI(prompt)
+                .then((res) => {
+                    setAiAnalysis(res || "Unable to generate analysis. Please check your AI configuration.");
+                })
+                .catch(() => setAiAnalysis("Analysis failed. Please try again."))
+                .finally(() => setIsAnalyzing(false));
         }
     }, [open, trade]);
 
@@ -164,14 +176,3 @@ export function TradeDetailsSheet({ open, onOpenChange, trade, onAddJournal }: T
     );
 }
 
-// Helper to generate mock analysis text based on trade result
-function generateMockAnalysis(trade: Trade): string {
-    const isWin = (trade.pnl || 0) >= 0;
-    const pnl = trade.pnl?.toFixed(2);
-
-    if (isWin) {
-        return `STRONG EXECUTION ✅\n\nThis ${trade.side} order on ${trade.symbol} demonstrated excellent timing. You captured a profit of $${pnl} with a solid entry. The market structure supported this move, and you exited while momentum was still favorable.\n\nKey Strength: Patience in waiting for the setup.`;
-    } else {
-        return `LEARNING OPPORTUNITY ⚠️\n\nThis ${trade.side} order resulted in a loss of $${pnl}. It seems you might have entered during a consolidation phase or counter-trend. Review your stop-loss placement—was it too tight? \n\nSuggestion: Wait for clearer confirmation signals next time.`;
-    }
-}

@@ -8,7 +8,7 @@ import {
     Address,
 } from '@solana/kit';
 import { PublicKey, Connection } from '@solana/web3.js';
-import { DERIVERSE_CONFIG } from './config';
+import { DERIVERSE_CONFIG, getIsTesting } from './config';
 
 export interface InstrumentData {
     instrId: number;
@@ -61,7 +61,7 @@ export class DeriverseAnalyticsClient {
         console.log('[DeriverseClient] Config Loading:', {
             rpcUrl: scrubbedRpc,
             programId: DERIVERSE_CONFIG.programId,
-            isTesting: DERIVERSE_CONFIG.isTesting
+            isTesting: getIsTesting()
         });
 
         if (DERIVERSE_CONFIG.rpcUrl.includes('api.devnet.solana.com')) {
@@ -74,7 +74,7 @@ export class DeriverseAnalyticsClient {
 
     async initialize(walletAddress: string) {
         // Check Testing Mode FIRST
-        if (DERIVERSE_CONFIG.isTesting) {
+        if (getIsTesting()) {
             console.log('[DeriverseClient] TESTING MODE ENABLED: Initializing Mock Environment');
             this.isInitialized = true;
             this.signerAddress = address(walletAddress);
@@ -148,7 +148,7 @@ export class DeriverseAnalyticsClient {
      * Fetch all available trading instruments (markets)
      */
     async getAvailableInstruments(): Promise<InstrumentData[]> {
-        if (DERIVERSE_CONFIG.isTesting) {
+        if (getIsTesting()) {
             return [
                 { instrId: 1, symbol: 'SOL/USD', lastPrice: 145.20, bestBid: 145.10, bestAsk: 145.30, volume24h: 1250000, priceChange24h: 2.5 },
                 { instrId: 2, symbol: 'BTC/USD', lastPrice: 64200.00, bestBid: 64150, bestAsk: 64250, volume24h: 45000000, priceChange24h: -1.2 },
@@ -184,7 +184,7 @@ export class DeriverseAnalyticsClient {
      * Fetch user's current positions
      */
     async getUserPositions(): Promise<UserPosition[]> {
-        if (DERIVERSE_CONFIG.isTesting) {
+        if (getIsTesting()) {
             return [
                 { instrId: 1, symbol: 'SOL-PERP', side: 'LONG', size: 10, entryPrice: 142.00, currentPrice: 145.20, pnl: 32.00, pnlPercent: 2.25 },
                 { instrId: 2, symbol: 'BTC-PERP', side: 'SHORT', size: 0.5, entryPrice: 65000, currentPrice: 64200, pnl: 400.00, pnlPercent: 1.23 }
@@ -243,7 +243,7 @@ export class DeriverseAnalyticsClient {
      * Fetch user's trade history
      */
     async getTradeHistory(limit: number = 100): Promise<TradeHistory[]> {
-        if (DERIVERSE_CONFIG.isTesting) {
+        if (getIsTesting()) {
             return this.generateMockTradeHistory().slice(0, limit);
         }
 
@@ -335,7 +335,7 @@ export class DeriverseAnalyticsClient {
      * Get user's token balances
      */
     async getTokenBalances(): Promise<Map<number, { tokenId: number; amount: number; symbol: string }>> {
-        if (DERIVERSE_CONFIG.isTesting) {
+        if (getIsTesting()) {
             const balances = new Map();
             balances.set(1, { tokenId: 1, amount: 1000, symbol: 'SOL' });
             balances.set(2, { tokenId: 2, amount: 5000, symbol: 'USDC' });
@@ -362,7 +362,7 @@ export class DeriverseAnalyticsClient {
      * Subscribe to real-time price updates
      */
     async subscribeToInstrument(instrId: number, callback: (data: InstrumentData) => void) {
-        if (DERIVERSE_CONFIG.isTesting) {
+        if (getIsTesting()) {
             // Mock random price updates
             const interval = setInterval(() => {
                 const randomChange = (Math.random() - 0.5) * 0.5;

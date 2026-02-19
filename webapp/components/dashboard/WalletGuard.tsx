@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Wallet, Loader2, AlertCircle, TrendingUp } from "lucide-react";
 import { useEffect } from "react";
+import { getIsTesting } from "@/lib/deriverse/config";
 
 interface WalletGuardProps {
     children: React.ReactNode;
@@ -17,8 +18,8 @@ export function WalletGuard({ children }: WalletGuardProps) {
 
     // Auto-initialization is now handled internally by useDeriverse hook
 
-    // Not connected state
-    if (!isConnected) {
+    // Not connected state (Skipped if in Demo Mode)
+    if (!isConnected && !getIsTesting()) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <Card className="max-w-md w-full p-8 card-gradient text-center border-primary/20">

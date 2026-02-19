@@ -10,7 +10,8 @@ import {
     Send,
     CheckCircle,
     ChevronRight,
-    HelpCircle
+    HelpCircle,
+    MegaphoneIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,7 +120,7 @@ export default function SupportPage() {
                 </div>
 
                 {/* Quick Links */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="p-6 rounded-2xl bg-card border border-border hover:border-primary/30 hover:bg-muted/50 transition-all group cursor-pointer">
                         <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 mb-4 group-hover:scale-110 transition-transform">
                             <Book className="h-6 w-6" />
@@ -152,6 +153,17 @@ export default function SupportPage() {
                             File Report <ChevronRight className="h-4 w-4" />
                         </Link>
                     </div>
+
+                    <Link href="/support/changelog" className="p-6 rounded-2xl bg-card border border-border hover:border-amber-500/30 hover:bg-muted/50 transition-all group cursor-pointer">
+                        <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-4 group-hover:scale-110 transition-transform">
+                            <MegaphoneIcon className="h-6 w-6" />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2 group-hover:text-amber-500 transition-colors">Changelog</h3>
+                        <p className="text-muted-foreground mb-4 h-12">See what&apos;s new — latest features, improvements, and bug fixes.</p>
+                        <span className="flex items-center text-sm font-medium text-amber-500 hover:text-amber-400 gap-1">
+                            View Updates <ChevronRight className="h-4 w-4" />
+                        </span>
+                    </Link>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">

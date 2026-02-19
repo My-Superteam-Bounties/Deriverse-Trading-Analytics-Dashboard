@@ -3,6 +3,7 @@ import { useDeriverse } from './useDeriverse';
 import { useWalletStore } from '@/lib/wallet-store';
 import type { InstrumentData, UserPosition, TradeHistory } from '@/lib/deriverse/client';
 import { isAfter, startOfDay, subDays } from 'date-fns';
+import { getIsTesting } from '@/lib/deriverse/config';
 
 export interface DashboardMetrics {
     totalPnL: number;
@@ -34,7 +35,10 @@ export function useDeriverseData(filters?: { dateRange?: DateRange; symbol?: str
 
     useEffect(() => {
         async function fetchData() {
-            if (!isConnected || !isInitialized || !client) {
+            const isTesting = getIsTesting();
+
+            // Allow fetching if testing, otherwise require wallet connection
+            if ((!isConnected && !isTesting) || !isInitialized || !client) {
                 setData(null);
                 return;
             }

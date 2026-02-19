@@ -172,7 +172,7 @@ export function TradingJournal({ trade: initialTrade, recentTrades = [], open, o
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px] bg-[#09090B] border-white/10 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[700px] bg-card border-border max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     {activeTrade ? (
                         <div className="flex items-center gap-2 mb-2">

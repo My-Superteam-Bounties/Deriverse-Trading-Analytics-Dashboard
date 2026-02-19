@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { TradingJournal } from "./TradingJournal";
 import { useDeriverseData } from "@/hooks/useDeriverseData";
+import { journalClient } from "@/lib/deriverse/journal-client";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 interface JournalEntry {
     date: string;
@@ -35,7 +37,8 @@ const MOOD_ICONS: Record<string, any> = {
 
 export function JournalResearchView() {
     const { data: session } = useSession();
-    const { data: derivativeData } = useDeriverseData(); // Rename to avoid conflict with session data if needed, or just data
+    const { publicKey } = useWallet();
+    const { data: derivativeData } = useDeriverseData();
     const [entries, setEntries] = useState<JournalEntry[]>([]);
     const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -45,10 +48,8 @@ export function JournalResearchView() {
     const [isCreating, setIsCreating] = useState(false);
 
     useEffect(() => {
-        if (session) {
-            loadEntries();
-        }
-    }, [session]);
+        loadEntries();
+    }, [session, publicKey]);
 
     useEffect(() => {
         filterEntries();
@@ -57,16 +58,66 @@ export function JournalResearchView() {
     const loadEntries = async () => {
         setIsLoading(true);
         try {
-            const data = await googleDriveService.listEntries();
-            setEntries(data);
-        } catch (error: any) {
-            console.error("Failed to load journal:", error);
-            if (error.message === "UNAUTHORIZED") {
-                toast.error("Drive session expired. Please reconnect.");
-                signOut(); // Auto-disconnect
-            } else {
-                toast.error("Failed to load journal entries from Drive.");
+            // Fetch from Drive and blockchain in parallel
+            const [driveEntries, onChainAccounts] = await Promise.allSettled([
+                session ? googleDriveService.listEntries() : Promise.resolve([]),
+                publicKey && journalClient.isConfigured()
+                    ? journalClient.getAllJournals(publicKey)
+                    : Promise.resolve([]),
+            ]);
+
+            const drive: JournalEntry[] =
+                driveEntries.status === 'fulfilled' ? driveEntries.value : [];
+
+            // Map on-chain accounts to JournalEntry shape
+            const onChain: JournalEntry[] = [];
+            if (onChainAccounts.status === 'fulfilled') {
+                for (const acc of onChainAccounts.value) {
+                    const isHybrid = 'hybrid' in acc.entryType;
+
+                    // HYBRID: data field is a Drive file ID — only show once Drive is connected
+                    // (the Drive fetch above will already include the full entry)
+                    if (isHybrid && !session) continue;
+
+                    // ONCHAIN: data field is the full JSON entry
+                    try {
+                        const parsed = JSON.parse(acc.data) as Partial<JournalEntry>;
+                        onChain.push({
+                            date: parsed.date ?? new Date(Number(acc.timestamp) * 1000).toISOString(),
+                            tradeid: parsed.tradeid ?? acc.tradeHash.toBase58(),
+                            symbol: parsed.symbol ?? '',
+                            side: parsed.side ?? '',
+                            pnl: parsed.pnl ?? '0',
+                            mood: parsed.mood ?? '',
+                            notes: parsed.notes ?? acc.data,
+                            tags: parsed.tags ?? '',
+                            type: isHybrid ? 'HYBRID' : 'ONCHAIN',
+                        });
+                    } catch {
+                        // data isn't JSON (e.g. old entry or Drive file ID) — skip
+                        console.warn('[JournalResearchView] Could not parse on-chain data:', acc.data);
+                    }
+                }
             }
+
+            // Merge: Drive entries take precedence; add on-chain entries not already in Drive
+            const driveTradeIds = new Set(drive.map((e) => e.tradeid));
+            const uniqueOnChain = onChain.filter((e) => !driveTradeIds.has(e.tradeid));
+            setEntries([...drive, ...uniqueOnChain]);
+
+
+            if (driveEntries.status === 'rejected') {
+                const err = driveEntries.reason as Error;
+                if (err.message === 'UNAUTHORIZED') {
+                    toast.error('Drive session expired. Please reconnect.');
+                    signOut();
+                } else {
+                    toast.error('Failed to load Drive journal entries.');
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load journal:', error);
+            toast.error('Failed to load journal entries.');
         } finally {
             setIsLoading(false);
         }
@@ -164,6 +215,21 @@ export function JournalResearchView() {
                 </div>
             </div>
 
+            {/* Drive not connected — persistent banner regardless of entry count */}
+            {!session && (
+                <div className="flex items-center justify-between gap-4 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                    <div>
+                        <p className="text-sm font-bold text-primary">Missing Off-Chain &amp; Hybrid entries?</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Connect Google Drive to view your Off-Chain and Hybrid journals.
+                        </p>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => signIn('google')} className="shrink-0 gap-2 border-primary/20 text-primary hover:bg-primary/10">
+                        <HardDrive className="w-3 h-3" /> Connect Drive
+                    </Button>
+                </div>
+            )}
+
             {/* Grid Content */}
             {isLoading ? (
                 <div className="flex justify-center py-20">
@@ -174,21 +240,9 @@ export function JournalResearchView() {
                     <BookOpen className="w-12 h-12 dashed mx-auto mb-4 opacity-50" />
                     <p>No journal entries found matching your criteria.</p>
 
-                    {!session && (
-                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl max-w-md mx-auto">
-                            <h3 className="text-sm font-bold text-primary mb-1">Missing Entries?</h3>
-                            <p className="text-xs text-muted-foreground mb-3">
-                                Connect Google Drive to view <b>Off-Chain & Hybrid</b> journals.
-                                <br />
-                                On-Chain journals are synced via your wallet (Coming Soon).
-                            </p>
-                            <Button size="sm" variant="outline" onClick={() => signIn('google')} className="gap-2 border-primary/20 text-primary hover:bg-primary/10">
-                                <HardDrive className="w-3 h-3" /> Connect Drive
-                            </Button>
-                        </div>
-                    )}
                 </div>
             ) : (
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
                     {filteredEntries.map((entry, i) => {
                         const MoodIcon = MOOD_ICONS[entry.mood] || BookOpen;

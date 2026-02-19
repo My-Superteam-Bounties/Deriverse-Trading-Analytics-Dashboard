@@ -161,8 +161,161 @@ export async function POST(req: Request) {
             return NextResponse.json({ entries: entries.reverse() }); // Newest first
         }
 
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+        if (action === 'savePreferences') {
+            const { preferences } = body;
+            const PREFS_FILENAME = 'preferences.json';
 
+            // Ensure folder exists
+            const folderListRes = await drive.files.list({
+                q: `mimeType='application/vnd.google-apps.folder' and name='${FOLDER_NAME}' and trashed=false`,
+                fields: 'files(id)',
+            });
+            let folderId = folderListRes.data.files?.[0]?.id;
+            if (!folderId) {
+                const createRes = await drive.files.create({
+                    requestBody: { name: FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' },
+                    fields: 'id',
+                });
+                folderId = createRes.data.id!;
+            }
+
+            // Find existing prefs file
+            const prefsListRes = await drive.files.list({
+                q: `name='${PREFS_FILENAME}' and '${folderId}' in parents and trashed=false`,
+                fields: 'files(id)',
+            });
+            const existingId = prefsListRes.data.files?.[0]?.id;
+            const content = JSON.stringify(preferences, null, 2);
+
+            if (existingId) {
+                await drive.files.update({
+                    fileId: existingId,
+                    media: { mimeType: 'application/json', body: content },
+                });
+                return NextResponse.json({ fileId: existingId });
+            } else {
+                const createRes = await drive.files.create({
+                    requestBody: { name: PREFS_FILENAME, mimeType: 'application/json', parents: [folderId] },
+                    media: { mimeType: 'application/json', body: content },
+                    fields: 'id',
+                });
+                return NextResponse.json({ fileId: createRes.data.id });
+            }
+        }
+
+        if (action === 'loadPreferences') {
+            const PREFS_FILENAME = 'preferences.json';
+
+            const folderListRes = await drive.files.list({
+                q: `mimeType='application/vnd.google-apps.folder' and name='${FOLDER_NAME}' and trashed=false`,
+                fields: 'files(id)',
+            });
+            const folderId = folderListRes.data.files?.[0]?.id;
+            if (!folderId) return NextResponse.json({ preferences: null });
+
+            const prefsListRes = await drive.files.list({
+                q: `name='${PREFS_FILENAME}' and '${folderId}' in parents and trashed=false`,
+                fields: 'files(id)',
+            });
+            const fileId = prefsListRes.data.files?.[0]?.id;
+            if (!fileId) return NextResponse.json({ preferences: null });
+
+            const getRes = await drive.files.get({ fileId, alt: 'media' });
+            const preferences = JSON.parse(getRes.data as unknown as string);
+            return NextResponse.json({ preferences });
+        }
+
+        if (action === 'saveChat') {
+            const { filename, content, fileId } = body;
+            const CHATS_FOLDER = 'Chats';
+
+            // 1. Ensure Root Folder
+            const rootRes = await ensureFolder(drive, FOLDER_NAME);
+            const rootId = rootRes.id;
+
+            // 2. Ensure Chats Subfolder
+            const chatsRes = await ensureFolder(drive, CHATS_FOLDER, rootId);
+            const chatsId = chatsRes.id;
+
+            // 3. Create or Update File
+            if (fileId) {
+                await drive.files.update({
+                    fileId: fileId,
+                    media: { mimeType: 'application/json', body: content },
+                });
+                return NextResponse.json({ fileId });
+            } else {
+                // Check if file with same name exists first (to avoid duplicates on re-save)
+                const existing = await drive.files.list({
+                    q: `name='${filename}' and '${chatsId}' in parents and trashed=false`,
+                    fields: 'files(id)',
+                });
+
+                if (existing.data.files?.[0]?.id) {
+                    await drive.files.update({
+                        fileId: existing.data.files[0].id,
+                        media: { mimeType: 'application/json', body: content },
+                    });
+                    return NextResponse.json({ fileId: existing.data.files[0].id });
+                }
+
+                const createRes = await drive.files.create({
+                    requestBody: {
+                        name: filename,
+                        mimeType: 'application/json',
+                        parents: [chatsId]
+                    },
+                    media: { mimeType: 'application/json', body: content },
+                    fields: 'id',
+                });
+                return NextResponse.json({ fileId: createRes.data.id });
+            }
+        }
+
+        if (action === 'listChats') {
+            const CHATS_FOLDER = 'Chats';
+
+            // 1. Find Root
+            const rootList = await drive.files.list({
+                q: `mimeType='application/vnd.google-apps.folder' and name='${FOLDER_NAME}' and trashed=false`,
+                fields: 'files(id)',
+            });
+            const rootId = rootList.data.files?.[0]?.id;
+            if (!rootId) return NextResponse.json({ chats: [] });
+
+            // 2. Find Chats Folder
+            const chatsList = await drive.files.list({
+                q: `mimeType='application/vnd.google-apps.folder' and name='${CHATS_FOLDER}' and '${rootId}' in parents and trashed=false`,
+                fields: 'files(id)',
+            });
+            const chatsId = chatsList.data.files?.[0]?.id;
+            if (!chatsId) return NextResponse.json({ chats: [] });
+
+            // 3. List JSON Files
+            const filesRes = await drive.files.list({
+                q: `'${chatsId}' in parents and mimeType='application/json' and trashed=false`,
+                orderBy: 'modifiedTime desc',
+                fields: 'files(id, name, modifiedTime)',
+                pageSize: 20 // Limit to recent chats
+            });
+
+            return NextResponse.json({ chats: filesRes.data.files });
+        }
+
+        if (action === 'loadChat') {
+            const { fileId } = body;
+            if (!fileId) return NextResponse.json({ error: 'Missing fileId' }, { status: 400 });
+
+            try {
+                const getRes = await drive.files.get({ fileId, alt: 'media' });
+                return NextResponse.json({ content: getRes.data });
+            } catch (err) {
+                console.error("Failed to load chat:", err);
+                return NextResponse.json({ error: 'Failed to load chat' }, { status: 500 });
+            }
+        }
+
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     } catch (error: any) {
         console.error(error);
         if (error.code === 401 || error.message?.includes('invalid_grant') || error.message?.includes('Invalid Credentials')) {
@@ -170,4 +323,24 @@ export async function POST(req: Request) {
         }
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
+}
+
+// Helper to ensure folder exists
+async function ensureFolder(drive: any, name: string, parentId?: string) {
+    const q = `mimeType='application/vnd.google-apps.folder' and name='${name}' and trashed=false ${parentId ? `and '${parentId}' in parents` : ''}`;
+    const listRes = await drive.files.list({ q, fields: 'files(id)' });
+
+    if (listRes.data.files?.[0]?.id) {
+        return { id: listRes.data.files[0].id };
+    }
+
+    const createRes = await drive.files.create({
+        requestBody: {
+            name,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: parentId ? [parentId] : undefined,
+        },
+        fields: 'id',
+    });
+    return { id: createRes.data.id };
 }

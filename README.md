@@ -1,25 +1,93 @@
 # Deriverse Trading Analytics Dashboard
 
-A professional, high-performance trading analytics dashboard for the Solana ecosystem (and beyond). This application provides real-time insights, PnL analysis, and an AI-powered chat interface for traders.
+Welcome to the **Deriverse Trading Analytics Dashboard**, a professional-grade interface designed for traders on the Deriverse platform. This dashboard provides deep insights into your trading performance, AI-powered analysis, and seamless journal management—all while keeping your data 100% private.
 
-![Deriverse Dashboard](https://github.com/user-attachments/assets/4a39ff8e-a85e-4ce2-9cc6-5ea83a6c9fa7)
+![Dashboard Preview](./webapp/public/deriverse.webp)
 
-## 🚀 Features
+## 🌟 Key Features
 
-### Core Analytics
-- **Summary Cards**: Real-time tracking of Total PnL, Volume, Win Rate, and Trade Counts.
-- **PnL Analysis**: Interactive Area Charts for historical performance and drawdown visualization.
-- **Trade History**: Advanced data table with sorting, filtering (Date, Symbol), and pagination.
-- **Performance Metrics**: Detailed breakdown of Long/Short ratios, Average Wins/Losses, and Duration histograms.
+-   **Privacy-First Architecture**: We do not store your data. Your trading history, journals, and chat logs are stored **locally in your browser** or **in your own Google Drive**. You are in full control.
+-   **AI Trading Intelligence**: Chat with an advanced AI assistant that understands your portfolio. Ask questions like *"Why did I lose money on SOL-PERP last week?"* or *"Analyze my win rate on Tuesdays."*
+-   **Interactive Trade Journal**: Log your trades, add notes, and tag strategies. Syncs automatically with your Google Drive for permanent, private storage.
+-   **Live & Demo Modes**: Toggle between real-time on-chain data and a risk-free Demo Mode to explore the features without connecting a wallet.
+-   **Advanced Charting**: Visualize your PnL, volume, and asset distribution with beautiful, interactive charts.
 
-### Intelligence Layer (AI Chat)
-- **Context-Aware AI**: Ask natural language questions about your portfolio (e.g., "Analyze my Win Rate").
+## 🚀 Getting Started
+
+### 1. Connect Your Wallet
+Click the "Connect Wallet" button in the top right. We support **Phantom**, **Solflare**, and other major Solana wallets.
+*   **Note**: In Demo Mode, you don't need a wallet! Just toggle the "Demo" switch in the header to validan explore.
+
+### 2. Connect Google Drive (Optional but Recommended)
+To save your chat history and trade journal permanently, connect your Google Drive in the **Settings** page.
+*   **Why?** This allows you to access your data from any device and ensures you never lose your analysis.
+*   **Privacy**: We only ask for permission to create and manage files *created by this app*. We cannot see your other personal files.
+
+### 3. Start Analyze
+*   **Terminal**: View live market data and your active positions.
+*   **Intelligence**: Open the AI drawer to chat about your trades.
+*   **Journal**: Log your thoughts on specific trades to improve your psychology.
+
+## 🔒 Privacy & Data Ownership
+
+**Your Data Scenarios:**
+1.  **No Connections**: Data is stored in your browser's "Local Storage". It stays on your device but will be lost if you clear your cache.
+2.  **Wallet Connected**: We fetch your public on-chain trade history from the Solana blockchain to display analytics. We do not have access to your private keys.
+3.  **Google Drive Connected**: Your journals and chat logs are saved as simple, readable JSON and Text files in a specific folder in your Drive. You can delete or export them at any time.
+
+**We do not have a backend database.** We cannot see, sell, or leak your data because we never touch it.
+
+## 🛠️ For Developers
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/your-repo/deriverse-dashboard.git
+
+# Install dependencies
+cd webapp
+npm install
+
+# Run development server
+npm run dev
+```
+
+### Environment Variables (.env.local)
+
+Required for full functionality:
+
+```env
+# Solana RPC (Optional, defaults to public Devnet)
+NEXT_PUBLIC_RPC_HTTP=https://api.devnet.solana.com
+
+# AI Integration (Required for Chat)
+NEXT_PUBLIC_DEEPSEEK_API_KEY=your_api_key_here
+
+# Google Drive (Required for Cloud Storage)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+NEXT_PUBLIC_GOOGLE_API_KEY=your_google_script_api_key
+```
+
+### Architecture
+*   **Framework**: Next.js 14 (App Router)
+*   **Styling**: Tailwind CSS + Shadcn UI
+*   **State Management**: Zustand
+*   **Charts**: Recharts
+*   **Web3**: Solana Wallet Adapter
+
+## 🤝 Support & Updates
+
+Check out our [Changelog](/support/changelog) for the latest updates.
+If you encounter any issues, please open an issue on GitHub or contact the team on Discord.
+
+---
+*Built for the Superteam hackathon.* portfolio (e.g., "Analyze my Win Rate").
 - **Rich Media Responses**: The AI can generate:
   - **Dynamic Charts**: Visualizing trends instantly.
   - **Data Tables**: Structured data for complex queries.
 - **Smart Input**: Auto-expanding chat interface with file upload capabilities.
 
-### Wallet Verification & Security
 - **Multi-Chain Support**: Simulated connection for MetaMask (EVM), Phantom (Solana), Rabby, and WalletConnect.
 - **Persistent State**: Wallet session management via `zustand` (persisted on refresh).
 - **Secure Handling**: Connect/Disconnect flows with truncated address display and balance simulation.

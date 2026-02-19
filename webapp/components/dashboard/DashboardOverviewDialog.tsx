@@ -3,9 +3,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { DashboardMetrics } from "@/hooks/useDeriverseData";
-import { Sparkles, Activity, TrendingUp, DollarSign, Wallet } from "lucide-react";
+import { Sparkles, Activity, TrendingUp, DollarSign, Wallet, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OverviewChart } from "./OverviewChart";
+import { invokeAI } from "@/lib/ai/client";
+import { useState, useEffect } from "react";
 
 interface DashboardOverviewDialogProps {
     open: boolean;
@@ -14,6 +16,34 @@ interface DashboardOverviewDialogProps {
 }
 
 export function DashboardOverviewDialog({ open, onOpenChange, data }: DashboardOverviewDialogProps) {
+    const [summary, setSummary] = useState<string>("");
+    const [isSummarizing, setIsSummarizing] = useState(false);
+
+    useEffect(() => {
+        if (!open || !data) return;
+        setIsSummarizing(true);
+        setSummary("");
+
+        const { totalPnL, winRate, totalTrades, totalVolume } = {
+            totalPnL: data.totalPnL || 0,
+            winRate: data.winRate || 0,
+            totalTrades: data.totalTrades || 0,
+            totalVolume: data.totalVolume || 0,
+        };
+
+        const prompt = `You are a professional trading analyst. Provide a 2-3 sentence performance summary for a trader with these stats:
+- Total PnL: $${totalPnL.toFixed(2)}
+- Win Rate: ${winRate.toFixed(1)}%
+- Total Trades: ${totalTrades}
+- Total Volume: $${totalVolume.toLocaleString()}
+
+Be concise, insightful, and encouraging. Focus on what the numbers reveal about their trading style and edge.`;
+
+        invokeAI(prompt).then((res) => {
+            setSummary(res || "Unable to generate summary. Please check your AI configuration.");
+        }).finally(() => setIsSummarizing(false));
+    }, [open, data]);
+
     if (!data) return null;
 
     const { totalPnL, winRate, totalTrades, realizedPnL, totalVolume, trades } = {
@@ -24,24 +54,6 @@ export function DashboardOverviewDialog({ open, onOpenChange, data }: DashboardO
         totalVolume: data.totalVolume || 0,
         trades: data.trades || []
     };
-
-    // AI Analyst Summary Logic
-    const getAISummary = () => {
-        if (totalTrades === 0) return "You are currently observing the market. No active trading history found.";
-
-        let sentiment = "";
-        if (totalPnL > 1000) sentiment = "exceptional performance";
-        else if (totalPnL > 0) sentiment = "steady growth";
-        else sentiment = "challenging market conditions";
-
-        let volumeInsight = "";
-        if (totalVolume > 100000) volumeInsight = "high volume execution";
-        else volumeInsight = "strategic position sizing";
-
-        return `You are trading with ${sentiment}, demonstrating ${volumeInsight}. Your win rate of ${winRate.toFixed(1)}% suggests ${winRate > 50 ? "a strong edge" : "room for optimization"} in your current strategy.`;
-    };
-
-    const summary = getAISummary();
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,10 +76,17 @@ export function DashboardOverviewDialog({ open, onOpenChange, data }: DashboardO
                                 Your Trading <br /> Performance
                             </h2>
 
-                            <div className="bg-white/5 rounded-xl p-5 border border-white/5 mb-8 backdrop-blur-md">
-                                <p className="text-zinc-300 text-sm leading-relaxed italic">
-                                    "{summary}"
-                                </p>
+                            <div className="bg-white/5 rounded-xl p-5 border border-white/5 mb-8 backdrop-blur-md min-h-[80px] flex items-center">
+                                {isSummarizing ? (
+                                    <div className="flex items-center gap-3 text-zinc-400">
+                                        <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                                        <span className="text-sm italic">Analyzing your performance...</span>
+                                    </div>
+                                ) : (
+                                    <p className="text-zinc-300 text-sm leading-relaxed italic">
+                                        "{summary}"
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-6">

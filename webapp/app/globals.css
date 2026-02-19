@@ -430,24 +430,50 @@ div.wallet-adapter-modal,
 }
 
 /* Scrollbar Styling */
-.wallet-adapter-modal-list::-webkit-scrollbar {
-  width: 6px !important;
+/* Custom Scrollbars */
+/* WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 10px !important;
+  height: 10px !important;
 }
 
-.wallet-adapter-modal-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-radius: 3px !important;
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted)/0.1) !important;
+  border-radius: 9999px !important;
 }
 
-.wallet-adapter-modal-list::-webkit-scrollbar-thumb {
-  background: var(--primary) !important;
-  border-radius: 3px !important;
-  opacity: 0.5 !important;
+::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.3) !important;
+  border-radius: 9999px !important;
+  border: 2px solid transparent !important;
+  background-clip: content-box !important;
 }
 
-.wallet-adapter-modal-list::-webkit-scrollbar-thumb:hover {
-  background: var(--primary) !important;
-  opacity: 0.8 !important;
+::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.6) !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent !important;
+}
+
+/* Specific overrides for dark mode to ensure visibility */
+.dark ::-webkit-scrollbar-track {
+  background: hsl(var(--muted)/0.1) !important;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.4) !important;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.7) !important;
 }
 
 /* Collapse/Expand Buttons */

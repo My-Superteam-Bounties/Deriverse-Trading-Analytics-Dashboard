@@ -1,15 +1,22 @@
 use anchor_lang::prelude::*;
 
-declare_id!("42RgC7CEYiGQPigBtixyn7dXqsua4ZxyJnD9Rn1ZQgPD");
+declare_id!("FVA1Zm6XdXVrquowDexrDuKyChmMY7oYG2Go7UEVhtz1");
 
 const MAX_JOURNAL_LENGTH: usize = 1024;
 const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+pub enum EntryType {
+    Onchain,
+    Hybrid,
+    Offchain,
+}
 
 #[program]
 pub mod deriverse_analytics {
     use super::*;
 
-    pub fn add_journal(ctx: Context<AddJournal>, data: String, trade_hash: Pubkey, entry_type: u8) -> Result<()> {
+    pub fn add_journal(ctx: Context<AddJournal>, data: String, trade_hash: Pubkey, entry_type: EntryType) -> Result<()> {
         let journal = &mut ctx.accounts.journal;
         journal.authority = ctx.accounts.authority.key();
         journal.timestamp = Clock::get()?.unix_timestamp as u64;
@@ -30,7 +37,7 @@ pub mod deriverse_analytics {
 
 #[derive(Accounts)]
 pub struct AddJournal<'info> {
-    #[account(init, payer = authority, space = Journal::INIT_SPACE + ANCHOR_DISCRIMINATOR_SIZE, seeds = [b"journal", authority.key().as_ref(), trade_hash.as_ref()], bump)]
+    #[account(init, payer = authority, space = Journal::INIT_SPACE + ANCHOR_DISCRIMINATOR_SIZE, seeds = [b"journal", authority.key().as_ref(), trade_hash.key().as_ref()], bump)]
     pub journal: Account<'info, Journal>,
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -47,7 +54,7 @@ pub struct Journal {
     pub trade_hash: Pubkey,
     #[max_len(MAX_JOURNAL_LENGTH)]
     pub data: String,
-    pub entry_type: u8, // 0: Onchain, 1: Hybrid, 2: Offchain
+    pub entry_type: EntryType,
 }
 
 // #[derive(Accounts)]
