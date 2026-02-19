@@ -127,14 +127,16 @@ export function TradingJournal({ trade: initialTrade, recentTrades = [], open, o
 
             // 2. Handle Chain Storage (Onchain & Hybrid)
             if (journalMode === EntryType.ONCHAIN || journalMode === EntryType.HYBRID) {
-                if (!publicKey) throw new Error("Wallet not connected");
+                if (!publicKey || !signTransaction || !signAllTransactions) throw new Error("Wallet not connected or does not support signing");
 
                 const tradeHash = selectedTrade?.orderId || "general_entry_" + Date.now(); // fallback
 
+                const signer = signTransaction;
+                const signerAll = signAllTransactions;
                 const walletAdapter = {
                     publicKey,
-                    signTransaction,
-                    signAllTransactions
+                    signTransaction: signer,
+                    signAllTransactions: signerAll
                 };
 
                 const tx = await journalClient.saveJournalOnChain(
