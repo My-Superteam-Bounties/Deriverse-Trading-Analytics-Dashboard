@@ -78,30 +78,41 @@ export function CustomWalletModal({ className, children }: CustomWalletModalProp
         return () => clearInterval(t);
     }, []);
 
+    const [connectionTimeout, setConnectionTimeout] = useState<NodeJS.Timeout | null>(null);
+
     const handleConnect = useCallback(async (walletName: WalletName) => {
         setError(null);
         setIsConnectingTo(walletName);
 
         try {
-            // Find the wallet adapter instance from the hook's list
             const selectedWallet = wallets.find(w => w.adapter.name === walletName);
+            if (!selectedWallet) throw new Error("Wallet adapter not found");
 
-            if (!selectedWallet) {
-                throw new Error("Wallet adapter not found");
+            const isAlreadySelected = wallet?.adapter.name === walletName;
+
+            if (!isAlreadySelected) {
+                // Let autoConnect handle it after selection
+                select(walletName);
+
+                // Add a timeout to reset the spinner if autoConnect fails silently or user ignores it
+                const timeout = setTimeout(() => {
+                    if (isConnectingTo === walletName && !connected) {
+                        setIsConnectingTo(null);
+                        setError("Connection request timed out. Please try again.");
+                    }
+                }, 15000);
+                setConnectionTimeout(timeout);
+                return;
             }
 
-            // 1. Select it in the global state
-            select(walletName);
-
-            // 2. Connect directly to preserve user gesture (fixing the popup blocker issue)
             try {
                 await selectedWallet.adapter.connect();
             } catch (err: any) {
-                // If the error is "Already connected" or similar, we might want to ignore it 
-                // or handle it gracefully, but usually connect() throws if failed.
-                throw err;
+                // Ignore WalletReadyStateError as it usually means already connecting/connected
+                if (err.name !== 'WalletReadyStateError') {
+                    throw err;
+                }
             }
-
         } catch (err: any) {
             console.error("Connect error:", err);
             if (err.name === "WalletWindowClosedError") {
@@ -111,7 +122,18 @@ export function CustomWalletModal({ className, children }: CustomWalletModalProp
             }
             setIsConnectingTo(null);
         }
-    }, [select, wallets]);
+    }, [select, wallets, wallet, isConnectingTo, connected]);
+
+    // Clear timeout on unmount or when connected
+    useEffect(() => {
+        if (connected && connectionTimeout) {
+            clearTimeout(connectionTimeout);
+            setConnectionTimeout(null);
+        }
+        return () => {
+            if (connectionTimeout) clearTimeout(connectionTimeout);
+        };
+    }, [connected, connectionTimeout]);
 
 
     // Handle Disconnect
